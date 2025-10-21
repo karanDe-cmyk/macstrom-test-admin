@@ -3,6 +3,7 @@
 /* eslint-disable react/jsx-no-target-blank */
 import { useState, useEffect } from "react"
 import { Plus, X, Upload, Edit, Trash2, Loader, Settings, Save } from "lucide-react"
+import axiosInstance from "../utils/axios"
 
 // Functionality, data flow, and handlers remain unchanged.
 
@@ -46,8 +47,6 @@ const AdminPanel = () => {
     features: {},
   })
 
-  const API_BASE_URL = "https://api-v1.macstrombattle.com/api/subscriptions"
-
   // Initialize features object based on available features
   const initializeFeatures = () => {
     const features = {}
@@ -61,11 +60,10 @@ const AdminPanel = () => {
   const fetchPlans = async () => {
     try {
       setLoading(true)
-      const response = await fetch(API_BASE_URL)
-      const result = await response.json()
+      const response = await axiosInstance.get('/subscriptions')
 
-      if (result.success) {
-        setPlans(result.data)
+      if (response.data.success) {
+        setPlans(response.data.data)
         setError(null)
       } else {
         setError("Failed to fetch plans")
@@ -304,42 +302,35 @@ const AdminPanel = () => {
       let response
 
       if (editingPlan) {
-        response = await fetch(`${API_BASE_URL}/${editingPlan}`, {
-          method: "PUT",
-          body: formDataToSend,
+        response = await axiosInstance.put(`/subscriptions/${editingPlan}`, formDataToSend, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
         })
       } else {
-        response = await fetch(API_BASE_URL, {
-          method: "POST",
-          body: formDataToSend,
+        response = await axiosInstance.post('/subscriptions', formDataToSend, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
         })
       }
 
-      if (response.ok) {
-  const updatedPlan = await response.json()
-
-  if (editingPlan) {
-    // Update the plan in-place (preserve array order)
-    setPlans((prev) =>
-      prev.map((plan) =>
-        plan.id === editingPlan ? { ...plan, ...updatedPlan.data } : plan
-      )
-    )
-  } else {
-    // Add new plan at the end (or start, depending on your preference)
-    setPlans((prev) => [...prev, updatedPlan.data])
-  }
-
-  closePopup()
-}
-
-      else {
-        const errorData = await response.json()
-        alert(`Error: ${errorData.message || "Failed to save plan"}`)
+      if (editingPlan) {
+        // Update the plan in-place (preserve array order)
+        setPlans((prev) =>
+          prev.map((plan) =>
+            plan.id === editingPlan ? { ...plan, ...response.data.data } : plan
+          )
+        )
+      } else {
+        // Add new plan at the end (or start, depending on your preference)
+        setPlans((prev) => [...prev, response.data.data])
       }
+
+      closePopup()
     } catch (err) {
       console.error("Submit error:", err)
-      alert("Error connecting to server")
+      alert(`Error: ${err.response?.data?.message || "Failed to save plan"}`)
     } finally {
       setSubmitting(false)
     }
@@ -351,18 +342,11 @@ const AdminPanel = () => {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/${planId}`, {
-        method: "DELETE",
-      })
-
-      if (response.ok) {
-        await fetchPlans()
-      } else {
-        alert("Failed to delete plan")
-      }
+      await axiosInstance.delete(`/subscriptions/${planId}`)
+      await fetchPlans()
     } catch (err) {
       console.error("Delete error:", err)
-      alert("Error connecting to server")
+      alert("Failed to delete plan")
     }
   }
 

@@ -12,7 +12,7 @@ const RulesAdminPanel = () => {
     type: '',
     important_notice: ''
   });
-  const [viewMode, setViewMode] = useState('list');
+  const [viewMode, setViewMode] = useState('grid');
   const [filterSection, setFilterSection] = useState('all');
   const [filterType, setFilterType] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');

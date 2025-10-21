@@ -176,6 +176,10 @@ const TeamCard = ({ team, onEdit, onDelete, onViewDetails }) => {
                 : "N/A"}
             </p>
           </div>
+          <div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Game Type</p>
+            <p className="font-medium text-gray-900 dark:text-white">{team.gameType || "N/A"}</p>
+          </div>
         </div>
 
         <div className="mt-4">
@@ -274,40 +278,66 @@ const TeamEditModal = ({ team, onClose, onSave }) => {
     setRules(rules.filter((_, i) => i !== index));
   };
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    setError(null);
-    try {
-      const updatedTeam = {
-        ...team,
-        name,
-        registrationAmount: Number(registrationAmount),
-        lastRegistrationDate: lastRegistrationDate ? new Date(lastRegistrationDate).toISOString() : null,
-        rules: rules.map((text, order) => ({
-          id: team.rules[order]?.id || null, // Preserve existing rule IDs if they exist
-          teamId: team.id,
-          text: String(text), // Ensure text is a string
-          order,
-          createdAt: team.rules[order]?.createdAt || new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        })),
-      };
-      const response = await fetch(`${API_BASE_URL}/admin/teams/${team.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedTeam),
-      });
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const savedTeam = await response.json();
-      onSave(savedTeam);
-    } catch (e) {
-      console.error("Failed to save team info:", e);
-      setError("Failed to save team information. Please try again.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  // const handleSave = async () => {
+  //   setIsSaving(true);
+  //   setError(null);
+  //   try {
+  //     const updatedTeam = {
+  //       ...team,
+  //       name,
+  //       registrationAmount: Number(registrationAmount),
+  //       lastRegistrationDate: lastRegistrationDate ? new Date(lastRegistrationDate).toISOString() : null,
+  //       rules: rules.map((text, order) => ({
+  //         id: team.rules[order]?.id || null, // Preserve existing rule IDs if they exist
+  //         teamId: team.id,
+  //         text: String(text), // Ensure text is a string
+  //         order,
+  //         createdAt: team.rules[order]?.createdAt || new Date().toISOString(),
+  //         updatedAt: new Date().toISOString(),
+  //       })),
+  //     };
+  //     const response = await axiosInstance.put(`/admin/teams/${team.id}`, updatedTeam);
+  //     onSave(response.data);
+  //   } catch (e) {
+  //     console.error("Failed to save team info:", e);
+  //     setError("Failed to save team information. Please try again.");
+  //   } finally {
+  //     setIsSaving(false);
+  //   }
+  // };
 
+  const handleSave = async () => {
+  setIsSaving(true);
+  setError(null);
+  try {
+    // Convert registrationAmount to a number, but preserve 0 explicitly
+    const parsedRegistrationAmount =
+      registrationAmount === "" ? null : Number(registrationAmount);
+
+    const updatedTeam = {
+      ...team,
+      name,
+      registrationAmount: parsedRegistrationAmount,
+      lastRegistrationDate: lastRegistrationDate ? new Date(lastRegistrationDate).toISOString() : null,
+      rules: rules.map((text, order) => ({
+        id: team.rules[order]?.id || null,
+        teamId: team.id,
+        text: String(text),
+        order,
+        createdAt: team.rules[order]?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      })),
+    };
+
+    const response = await axiosInstance.put(`/admin/teams/${team.id}`, updatedTeam);
+    onSave(response.data);
+  } catch (e) {
+    console.error("Failed to save team info:", e);
+    setError("Failed to save team information. Please try again.");
+  } finally {
+    setIsSaving(false);
+  }
+};
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex justify-center items-center z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
@@ -449,17 +479,11 @@ const BenefitsHowToPlayModal = ({ team, onClose, onSave }) => {
   useEffect(() => {
     const fetchTeamDetails = async () => {
       try {
-        const benefitsResponse = await fetch(`${API_BASE_URL}/admin/teams/${team.id}/benefits`);
-        if (benefitsResponse.ok) {
-          const benefitsData = await benefitsResponse.json();
-          setBenefits(benefitsData.map((item) => item.text));
-        }
+        const benefitsResponse = await axiosInstance.get(`/admin/teams/${team.id}/benefits`);
+        setBenefits(benefitsResponse.data.map((item) => item.text));
 
-        const howToPlayResponse = await fetch(`${API_BASE_URL}/admin/teams/${team.id}/how-to-play`);
-        if (howToPlayResponse.ok) {
-          const howToPlayData = await howToPlayResponse.json();
-          setHowToPlay(howToPlayData.map((item) => item.text));
-        }
+        const howToPlayResponse = await axiosInstance.get(`/admin/teams/${team.id}/how-to-play`);
+        setHowToPlay(howToPlayResponse.data.map((item) => item.text));
       } catch (error) {
         console.error("Failed to fetch Tournament details:", error);
         setError("Failed to load Tournament details. Please try again.");
@@ -493,19 +517,8 @@ const BenefitsHowToPlayModal = ({ team, onClose, onSave }) => {
     setSuccess(null);
 
     try {
-      const benefitsResponse = await fetch(`${API_BASE_URL}/admin/teams/${team.id}/benefits`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ benefits }),
-      });
-      if (!benefitsResponse.ok) throw new Error("Failed to update benefits");
-
-      const howToPlayResponse = await fetch(`${API_BASE_URL}/admin/teams/${team.id}/how-to-play`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ howToPlay }),
-      });
-      if (!howToPlayResponse.ok) throw new Error("Failed to update how to play");
+      await axiosInstance.put(`/admin/teams/${team.id}/benefits`, { benefits });
+      await axiosInstance.put(`/admin/teams/${team.id}/how-to-play`, { howToPlay });
 
       setSuccess("Tournament details updated successfully!");
       setTimeout(() => {
@@ -744,8 +757,8 @@ const Teams = () => {
   const handleDeleteTeam = (id) => {
     setConfirmAction(() => async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/admin/teams/${id}`, { method: "DELETE" });
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const response = await axiosInstance.delete(`/admin/teams/${id}`);
+        if (response.status !== 200) throw new Error(`HTTP error! status: ${response.status}`);
         setTeams((prev) => prev.filter((team) => team.id !== id));
         addToast("Tournament deleted successfully!", "success");
       } catch (e) {

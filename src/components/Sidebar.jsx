@@ -16,6 +16,7 @@ import {
   Radio,
   Globe,
   Wallet,
+  Headphones,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
@@ -59,7 +60,7 @@ const menuItems = [
       { label: "Games Registration", path: "/games-registation", permissionKey: "Games Registration" },
       {label: "All Transactions", path: "/all-transactions", permissionKey: "All Transactions" },
       { label: "Registration Form Controls", path: "/registation-details", permissionKey: "Registration Form Controls" },
-      { label: "Group Management", path: "/group-management", permissionKey: "Group Management" },
+      // { label: "Group Management", path: "/group-management", permissionKey: "Group Management" },
       // { label: "Prize Distribution", path: "/prize-distribution", permissionKey: "Prize Distribution" },
       { label: "Rules&Regulations", path: "/rules-regulations", permissionKey: "Rules&Regulations" },
     ],
@@ -143,7 +144,12 @@ const menuItems = [
     permissionKey: "Reports",
     subItems: [{ label: "Problem & Reports", path: "/Reportss", permissionKey: "Problem & Reports" }],
   },
-  {
+  // {
+  //   label: "Support Desk",
+  //   icon: Headphones,
+  //   path: "/support",
+  // },
+ {
     label: "Stream",
     icon: Radio,
     path: "/stream",

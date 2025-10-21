@@ -39,6 +39,8 @@ const GroupMembers = () => {
 
   const [isSavingSchedule, setIsSavingSchedule] = useState(false)
   const [isSavingRoom, setIsSavingRoom] = useState(false)
+  const [isDeletingSchedule, setIsDeletingSchedule] = useState(false)
+  const [isDeletingRoom, setIsDeletingRoom] = useState(false)
 
   useEffect(() => {
     fetchGroupMembers()
@@ -167,6 +169,47 @@ const GroupMembers = () => {
     }
   }
 
+  const handleDeleteStartDate = async () => {
+    try {
+      setIsDeletingSchedule(true)
+
+      await axiosInstance.delete(
+        `/macstrom-tournament/${gameType}/groups/${groupId}/start-date`
+      )
+
+      toast.success("Match schedule deleted successfully")
+      
+      // Re-fetch to get the latest data from server
+      await fetchGroupMembers()
+
+    } catch (err) {
+      console.error("Error deleting start date:", err)
+      toast.error(err.response?.data?.message || "Failed to delete match schedule")
+    } finally {
+      setIsDeletingSchedule(false)
+    }
+  }
+
+  const handleDeleteRoom = async () => {
+    try {
+      setIsDeletingRoom(true)
+
+      await axiosInstance.delete(
+        `/macstrom-tournament/${gameType}/groups/${groupId}/room`
+      )
+
+      toast.success("Room details deleted successfully")
+
+      // Re-fetch to get the latest data from server
+      await fetchGroupMembers()
+
+    } catch (err) {
+      console.error("Error deleting room details:", err)
+      toast.error(err.response?.data?.message || "Failed to delete room details")
+    } finally {
+      setIsDeletingRoom(false)
+    }
+  }
 
   const handleScheduleSubmit = async (e) => {
     e.preventDefault();
@@ -754,7 +797,30 @@ const GroupMembers = () => {
                     <div className="mt-4 space-y-6">
                       {/* Start Date Section */}
                       <div className="border border-gray-200 rounded-lg p-4">
-                        <h4 className="text-md font-semibold text-gray-800 mb-3">Match Schedule</h4>
+                        <div className="flex justify-between items-center mb-3">
+                          <h4 className="text-md font-semibold text-gray-800">Match Schedule</h4>
+                          {groupInfo?.startDate && (
+                            <button
+                              onClick={handleDeleteStartDate}
+                              disabled={isDeletingSchedule}
+                              className={`flex items-center px-3 py-1 text-sm rounded-md ${
+                                isDeletingSchedule
+                                  ? "bg-red-300 cursor-not-allowed text-white"
+                                  : "bg-red-100 text-red-700 hover:bg-red-200"
+                              }`}
+                            >
+                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                />
+                              </svg>
+                              {isDeletingSchedule ? "Deleting..." : "Delete"}
+                            </button>
+                          )}
+                        </div>
                         <form onSubmit={handleScheduleSubmit}>
                           <div className="space-y-3">
                             <div>
@@ -798,7 +864,30 @@ const GroupMembers = () => {
 
                       {/* Room Details Section */}
                       <div className="border border-gray-200 rounded-lg p-4">
-                        <h4 className="text-md font-semibold text-gray-800 mb-3">Room Details</h4>
+                        <div className="flex justify-between items-center mb-3">
+                          <h4 className="text-md font-semibold text-gray-800">Room Details</h4>
+                          {groupInfo?.room_id && (
+                            <button
+                              onClick={handleDeleteRoom}
+                              disabled={isDeletingRoom}
+                              className={`flex items-center px-3 py-1 text-sm rounded-md ${
+                                isDeletingRoom
+                                  ? "bg-red-300 cursor-not-allowed text-white"
+                                  : "bg-red-100 text-red-700 hover:bg-red-200"
+                              }`}
+                            >
+                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                />
+                              </svg>
+                              {isDeletingRoom ? "Deleting..." : "Delete"}
+                            </button>
+                          )}
+                        </div>
                         <form onSubmit={handleRoomSubmit}>
                           <div className="space-y-3">
                             <div>
@@ -870,7 +959,7 @@ const GroupMembers = () => {
                       roomDescription: ""
                     });
                   }}
-                  disabled={isSavingSchedule || isSavingRoom}
+                  disabled={isSavingSchedule || isSavingRoom || isDeletingSchedule || isDeletingRoom}
                   className="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:w-auto sm:text-sm"
                 >
                   Close
