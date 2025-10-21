@@ -604,7 +604,7 @@ const Dashboard = () => {
 
     {/* Total Teams */}
     <div className={`text-center p-4 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Teams</p>
+      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Tournaments</p>
       <p className={`text-lg font-semibold ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>{teams.length}</p>
     </div>
   </div>
