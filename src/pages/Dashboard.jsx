@@ -526,31 +526,38 @@ const Dashboard = () => {
                   : 'bg-gradient-to-r from-emerald-50 to-emerald-100'
               }`}>
                 <div>
-                  <p className="text-emerald-700 font-medium">Total Tournaments</p>
+                  <p className="text-emerald-700 font-medium">Total Tournaments <br></br> Registrations</p>
                   <p className={`text-2xl font-bold ${darkMode ? 'text-emerald-400' : 'text-emerald-900'}`}>{formatNumber(tournaments.length)}</p>
                 </div>
                 <div className="text-emerald-600">
                   <Target className="w-8 h-8" />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className={`text-center p-4 rounded-xl ${
-                  darkMode ? 'bg-gray-700' : 'bg-gray-50'
-                }`}>
-                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>This Week</p>
-                  <p className={`text-lg font-semibold ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-                    {tournaments.filter(t => t.createdAt && new Date(t.createdAt) > subDays(new Date(), 7)).length}
-                  </p>
-                </div>
-                <div className={`text-center p-4 rounded-xl ${
-                  darkMode ? 'bg-gray-700' : 'bg-gray-50'
-                }`}>
-                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>This Month</p>
-                  <p className={`text-lg font-semibold ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-                    {tournaments.filter(t => t.createdAt && new Date(t.createdAt) > subDays(new Date(), 30)).length}
-                  </p>
-                </div>
-              </div>
+
+<div className="grid grid-cols-2 gap-4">
+  <div className={`text-center p-4 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+    <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>This Week</p>
+    <p className={`text-lg font-semibold ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+      {tournaments.filter(t => t.createdAt && new Date(t.createdAt) > subDays(new Date(), 7)).length}
+    </p>
+  </div>
+
+  <div className={`text-center p-4 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+    <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>This Month</p>
+    <p className={`text-lg font-semibold ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+      {tournaments.filter(t => t.createdAt && new Date(t.createdAt) > subDays(new Date(), 30)).length}
+    </p>
+  </div>
+
+  {/* ✅ Centered Total Tournaments */}
+  <div className={`text-center p-4 rounded-xl col-span-2 mx-auto w-1/2 ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+    <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Tournaments</p>
+    <p className={`text-lg font-semibold ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+      {tournaments.length}
+    </p>
+  </div>
+</div>
+
             </div>
           </div>
 
@@ -603,10 +610,10 @@ const Dashboard = () => {
     </div>
 
     {/* Total Teams */}
-    <div className={`text-center p-4 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+{/*     <div className={`text-center p-4 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
       <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Tournaments</p>
       <p className={`text-lg font-semibold ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>{teams.length}</p>
-    </div>
+    </div> */}
   </div>
 </div>
 
