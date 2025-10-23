@@ -17,7 +17,7 @@ import {
 } from "lucide-react"
 
 // API Configuration
-const API_BASE_URL = "https://api-v1.macstrombattle.com/api"
+const API_BASE_URL = "https://macstrombattle-api.kglame.com/api"
 const AUTH_TOKEN = localStorage.getItem("authToken") || "your_default_token_here" // Replace with your actual token or logic to get it
 
 // API helper functions

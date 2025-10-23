@@ -14,7 +14,7 @@ const FirebaseNotificationHandler = () => {
       }
 
       try {
-        const apiUrl = 'https://api-v1.macstrombattle.com/api/notifications/save-fcm-token';
+        const apiUrl = 'https://macstrombattle-api.kglame.com/api/notifications/save-fcm-token';
 
         const response = await fetch(apiUrl, {
           method: 'POST',

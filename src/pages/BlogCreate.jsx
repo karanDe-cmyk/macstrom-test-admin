@@ -43,7 +43,7 @@ export default function CreateBlogPage() {
   const fetchBlogForEdit = async (blogId) => {
     setIsLoading(true)
     try {
-      const response = await api.get(`https://api-v1.macstrombattle.com/api/blogs/${blogId}`)
+      const response = await api.get(`https://macstrombattle-api.kglame.com/api/blogs/${blogId}`)
       const blog = response.data
       
       setFormData({
@@ -187,11 +187,11 @@ export default function CreateBlogPage() {
 
       if (isEditMode) {
         // Update existing blog
-        await api.put(`https://api-v1.macstrombattle.com/api/blogs/${id}`, submitFormData)
+        await api.put(`https://macstrombattle-api.kglame.com/api/blogs/${id}`, submitFormData)
         console.log("Blog updated successfully")
       } else {
         // Create new blog
-        await api.post('https://api-v1.macstrombattle.com/api/blogs', submitFormData)
+        await api.post('https://macstrombattle-api.kglame.com/api/blogs', submitFormData)
         console.log("Blog created successfully")
       }
 

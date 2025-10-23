@@ -250,7 +250,7 @@ const Sidebar = () => {
           console.log("Fetching permissions for Admin ID:", userId);
           
           const response = await fetch(
-            `https://api-v1.macstrombattle.com/api/auth/admin/getadminpermissions/${userId}`,
+            `https://macstrombattle-api.kglame.com/api/auth/admin/getadminpermissions/${userId}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,

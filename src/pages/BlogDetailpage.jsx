@@ -3,7 +3,7 @@ import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { FaArrowLeft, FaCalendarAlt, FaUser } from "react-icons/fa"
 
-const API_BASE_URL = "https://api-v1.macstrombattle.com/api/blogs"
+const API_BASE_URL = "https://macstrombattle-api.kglame.com/api/blogs"
 
 export default function BlogDetailPage() {
   const { id } = useParams()

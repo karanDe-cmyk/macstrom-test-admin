@@ -43,7 +43,7 @@ export default function NotificationCenter() {
 
   const fetchNotifications = async () => {
     try {
-      const res = await axios.get("https://api-v1.macstrombattle.com/api/notifications")
+      const res = await axios.get("https://macstrombattle-api.kglame.com/api/notifications")
       const transformed = res.data.map((n) => ({
         id: n.id,
         title: n.title,
@@ -111,7 +111,7 @@ export default function NotificationCenter() {
       }
 
       console.log("Sending payload:", payload)
-      const response = await axios.post("https://api-v1.macstrombattle.com/api/notifications", payload, {
+      const response = await axios.post("https://macstrombattle-api.kglame.com/api/notifications", payload, {
         headers: {
           "Content-Type": "application/json",
         },
@@ -188,7 +188,7 @@ export default function NotificationCenter() {
       // Delete notifications one by one using the API
       const deletePromises = selected.map(async (id) => {
         try {
-          await axios.delete(`https://api-v1.macstrombattle.com/api/notifications/${id}`)
+          await axios.delete(`https://macstrombattle-api.kglame.com/api/notifications/${id}`)
           return { id, success: true }
         } catch (error) {
           console.error(`Failed to delete notification ${id}:`, error)

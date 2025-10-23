@@ -19,7 +19,7 @@ const BlogApp = () => {
   const fetchBlogs = async () => {
     setLoading(true);
     try {
-      const response = await api.get('https://api-v1.macstrombattle.com/api/blogs');
+      const response = await api.get('https://macstrombattle-api.kglame.com/api/blogs');
       setBlogs(response.data);
     } catch (error) {
       console.error('Error fetching blogs:', error);
@@ -32,7 +32,7 @@ const BlogApp = () => {
   const deleteBlog = async (id) => {
     if (window.confirm('Are you sure you want to delete this blog?')) {
       try {
-        await api.delete(`https://api-v1.macstrombattle.com/api/blogs/${id}`);
+        await api.delete(`https://macstrombattle-api.kglame.com/api/blogs/${id}`);
         setBlogs(blogs.filter(blog => blog.id !== id));
       } catch (error) {
         console.error('Error deleting blog:', error);

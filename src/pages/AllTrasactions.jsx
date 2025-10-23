@@ -15,7 +15,7 @@ const TransactionsTable = () => {
 
   const fetchTransactions = async () => {
     try {
-      const response = await fetch('https://api-v1.macstrombattle.com/api/eventregister/payments/imb/transactions');
+      const response = await fetch('https://macstrombattle-api.kglame.com/api/eventregister/payments/imb/transactions');
       const result = await response.json();
       if (result.success) {
         setTransactions(result.data);

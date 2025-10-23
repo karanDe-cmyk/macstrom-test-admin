@@ -15,7 +15,7 @@ const TournamentAdminPanel = () => {
   const [newPrize, setNewPrize] = useState({ place: '', amount: '', benefits: [''] });
   const [newBenefit, setNewBenefit] = useState({ category: '', icon: 'gift', items: [{ name: '', description: '' }] });
 
-  const API_BASE_URL = 'https://api-v1.macstrombattle.com/api';
+  const API_BASE_URL = 'https://macstrombattle-api.kglame.com/api';
   const AUTH_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsInJvbGUiOiJTdXBlckFkbWluIiwiaWF0IjoxNzU4NzE1NjU5LCJleHAiOjE3NjAwMTE2NTl9.jIXfpq3K2-_vi3dp2CbKL7tBFfETyCiDsdpEd6r3aoo';
 
   // Helper function for API requests with Axios

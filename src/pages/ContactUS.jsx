@@ -212,7 +212,7 @@ export default function ContactsPage() {
               color: "#991b1b",
             }}
           >
-            <strong>Error:</strong> {error}. Please check your API connection at https://api-v1.macstrombattle.com/api
+            <strong>Error:</strong> {error}. Please check your API connection at https://macstrombattle-api.kglame.com/api
           </div>
         )}
 

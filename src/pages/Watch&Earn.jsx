@@ -22,7 +22,7 @@ const AdsAdmin = () => {
     thumbnailUrl: ''
   });
 
-  const API_BASE = 'https://api-v1.macstrombattle.com/api/admin/ads';
+  const API_BASE = 'https://macstrombattle-api.kglame.com/api/admin/ads';
   const AUTH_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQ0LCJyb2xlIjoiQWRtaW4iLCJpYXQiOjE3NTk0ODQzNzUsImV4cCI6MTc2MDc4MDM3NX0.OFj8dTuFDAeUho39ZsciOxqswK2RgQCoV3doJsQWq-8';
   
   const getHeaders = (isFormData = false) => {
