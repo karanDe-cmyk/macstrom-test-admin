@@ -13,7 +13,7 @@
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-  baseURL: 'https://macstrombattle-api.kglame.com/api',
+  baseURL: 'https://dev-macstrombattle-api.kglame.com/api',
   withCredentials: true,
 });
 
