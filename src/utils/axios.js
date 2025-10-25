@@ -13,19 +13,36 @@
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-  baseURL: 'https://macstrombattle-api.kglame.com/api',
+  baseURL: 'https://dev-macstrombattle-api.kglame.com/api',
   withCredentials: true,
 });
 
-// Interceptor to attach token dynamically on every request
+// Generate or retrieve device ID
+const getOrCreateDeviceId = () => {
+  let deviceId = localStorage.getItem('deviceId');
+  if (!deviceId) {
+    // Generate a unique device ID
+    deviceId = 'device-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('deviceId', deviceId);
+  }
+  return deviceId;
+};
+
+// Interceptor to attach token and device ID dynamically on every request
 axiosInstance.interceptors.request.use(
   (config) => {
+    // Add device ID to all requests
+    const deviceId = getOrCreateDeviceId();
+    config.headers['x-device-id'] = deviceId;
+
+    // Add authorization token if available
     const token = localStorage.getItem("authToken"); // get latest token
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     } else {
       delete config.headers.Authorization; // remove header if no token
     }
+    
     return config;
   },
   (error) => Promise.reject(error)

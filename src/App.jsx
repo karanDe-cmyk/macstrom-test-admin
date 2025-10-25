@@ -102,6 +102,8 @@ import ImbGatewayStatus from "./pages/ImbGatewayStatus";
 import TournamentWinnerGroups from "./pages/TournamentWinnerGroups";
 import WinnerGroupMembers from "./pages/WinnerGroupMembers";
 import AllTransactions from "./pages/AllTrasactions"; 
+import ActivityLog from "./pages/ActivityLog";
+import LoginHistory from "./pages/LoginHistory";
 
 //  ProtectedRoute component
 function ProtectedRoute({ children }) {
@@ -202,7 +204,10 @@ function App() {
             <Route path="/admin/ads" element={<Ads />} />
             <Route path="/voting-centre" element={<AllVotes />} />
             <Route path="/p&l-overview" element={<PLOverview />} />
+
             <Route path="/admin-management" element={<AdminManagement />} />
+            <Route path="/activity-logs" element={<ActivityLog />} />
+            <Route path="/login-history" element={<LoginHistory />} />
             <Route path="/system-health" element={<SystemHealth />} />
             <Route path="/audit-log" element={<AuditLogViewer />} />
             <Route path="/manual-ledger" element={<ManualLedger />} />

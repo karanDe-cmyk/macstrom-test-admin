@@ -4,13 +4,13 @@ pipeline {
 
     environment {
         SONAR_HOME = tool "Sonar"
-        IMAGE_NAME = "maccotech/macstrom-admin"
+        IMAGE_NAME = "maccotech/macstrom-admin-dev"
         K8S_REPO_URL = 'https://github.com/MaccoTechgit/aws-Kubernetes.git'
         K8S_BRANCH = 'macstrombattle'
         K8S_FOLDER = 'kubernetes'
-        YAML_FILE = "${K8S_FOLDER}/frontend-admin.yaml"
+        YAML_FILE = "${K8S_FOLDER}/dev-frontend-admin.yml"
         CODE_REPO_URL = 'https://github.com/MaccoTechgit/MacStrom_Battle_Admin.git'
-        CODE_BRANCH = 'admin'
+        CODE_BRANCH = 'dev'
     }
 
     stages {
@@ -52,7 +52,7 @@ pipeline {
         stage("SonarQube: Code Analysis") {
             steps {
                 script {
-                    sonarqube_analysis("Sonar", "macstrombattle-admin", "macstrombattle-admin")
+                    sonarqube_analysis("Sonar", "macstrombattle-dev-admin", "macstrombattle-dev-admin")
                 }
             }
         }
@@ -147,12 +147,12 @@ pipeline {
                         echo "Before sed:"
                         cat ${YAML_FILE}
 
-                        sed -i 's#image:\\s*maccotech/macstrom-admin:.*#image: maccotech/macstrom-admin:${env.FRONTEND_DOCKER_TAG}#' ${YAML_FILE}
+                        sed -i 's#image:\\s*maccotech/macstrom-admin-dev:.*#image: maccotech/macstrom-admin-dev:${env.FRONTEND_DOCKER_TAG}#' ${YAML_FILE}
 
                         echo "After sed:"
                         cat ${YAML_FILE}
 
-                        grep "image: maccotech/macstrom-admin:${env.FRONTEND_DOCKER_TAG}" ${YAML_FILE} || { echo "❌ Failed to update YAML file"; exit 1; }
+                        grep "image: maccotech/macstrom-admin-dev:${env.FRONTEND_DOCKER_TAG}" ${YAML_FILE} || { echo "❌ Failed to update YAML file"; exit 1; }
                     """
                 }
             }

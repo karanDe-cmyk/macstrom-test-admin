@@ -28,6 +28,8 @@ const menuItems = [
     submenuKey: "super-admin",
     subItems: [
       { label: "Admin Management", path: "/admin-management" },
+      { label: "Activity Logs", path: "/activity-logs" },
+      { label: "Login History", path: "/login-history" },
     ],
   },
   {

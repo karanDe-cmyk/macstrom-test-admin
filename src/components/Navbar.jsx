@@ -276,6 +276,7 @@ const Navbar = ({ onToggleSidebar }) => {
   const handleLogout = () => {
     setDropdownOpen(false);
     localStorage.removeItem("authToken");
+    localStorage.removeItem("deviceId");
     toast.success("Logged out successfully!", { position: "top-center" });
     setTimeout(() => navigate("/login", { replace: true }), 800);
   };
