@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { getToken } from "firebase/messaging";
 import { messaging } from "../firebase";
 import axiosInstance from "../utils/axios";
+import { toast } from "react-toastify";
 
 function Login({ setIsLoggedIn }) {
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -66,6 +67,7 @@ function Login({ setIsLoggedIn }) {
       const message =
         err.response?.data?.message || "Login failed. Please try again.";
       setServerError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

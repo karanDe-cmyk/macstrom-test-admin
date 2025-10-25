@@ -23,10 +23,12 @@ const AdminManagement = () => {
   const [editPermissionsModal, setEditPermissionsModal] = useState(false);
   const [editingAdminId, setEditingAdminId] = useState(null);
   const [editingName, setEditingName] = useState("");
+  const [maxLoginPerDevice, setMaxLoginPerDevice] = useState("");
   const [editingIsActive, setEditingIsActive] = useState(true);
   const [editingPermissions, setEditingPermissions] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [adminToDelete, setAdminToDelete] = useState(null);
+  const [forceLogoutLoading, setForceLogoutLoading] = useState(null);
 
   const getRelativeTime = (dateString) => {
     const date = new Date(dateString);
@@ -58,6 +60,7 @@ const AdminManagement = () => {
     email: "",
     phone: "",
     password: "",
+    maxLoginPerDevice: "",
     role: "Admin",
     permissions: [],
   });
@@ -274,6 +277,7 @@ const AdminManagement = () => {
   const submitEditPermissions = async () => {
     const updatedAdmin = {
       name: editingName,
+      maxLoginPerDevice: maxLoginPerDevice,
       isActive: editingIsActive,
       permissions: editingPermissions,
     };
@@ -306,6 +310,7 @@ const AdminManagement = () => {
   const handleEditPermissions = (admin) => {
     setEditingAdminId(admin.id);
     setEditingName(admin.name || "");
+    setMaxLoginPerDevice(admin.maxLoginPerDevice || "");
     setEditingIsActive(admin.isActive ?? true);
 
     const perms = (admin.permissions || []).map((p) => ({
@@ -336,6 +341,38 @@ const AdminManagement = () => {
     } catch (error) {
       console.error("Delete error:", error);
       toast.error("Failed to delete admin");
+    }
+  };
+
+  const handleForceLogout = async (adminId, adminName) => {
+    if (
+      !window.confirm(
+        `Are you sure you want to force logout ${adminName} from all devices?`
+      )
+    ) {
+      return;
+    }
+
+    setForceLogoutLoading(adminId);
+
+    try {
+      await axiosInstance.post(
+        `/auth/admin/admins/${adminId}/force-logout`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      toast.success(`${adminName} has been logged out from all devices`);
+      fetchAdmins(); // Refresh the list to show updated status
+    } catch (error) {
+      console.error("Force logout error:", error);
+      toast.error(
+        error.response?.data?.message || "Failed to force logout admin"
+      );
+    } finally {
+      setForceLogoutLoading(null);
     }
   };
 
@@ -423,6 +460,36 @@ const AdminManagement = () => {
                   : "No permissions"}
               </button>
 
+              <button
+                onClick={() => handleForceLogout(admin.id, admin.name)}
+                disabled={forceLogoutLoading === admin.id}
+                className={`flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors ${
+                  forceLogoutLoading === admin.id
+                    ? "bg-gray-400 text-gray-200 cursor-not-allowed"
+                    : "bg-orange-500 text-white hover:bg-orange-600"
+                }`}
+                title="Logout this admin from all devices"
+              >
+                {forceLogoutLoading === admin.id ? (
+                  <RefreshCcw className="w-3 h-3 animate-spin" />
+                ) : (
+                  <svg
+                    className="w-3 h-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                    />
+                  </svg>
+                )}
+                {forceLogoutLoading === admin.id ? "..." : "Logout"}
+              </button>
+
               <Eye
                 className="w-4 h-4 cursor-pointer text-gray-600 hover:text-black dark:hover:text-white"
                 onClick={() => {
@@ -468,6 +535,10 @@ const AdminManagement = () => {
             </div>
             <div className="mb-3">
               <strong>Role:</strong> {selectedAdmin.role}
+            </div>
+            <div className="mb-3">
+              <strong>Max Login per Device:</strong>{" "}
+              {selectedAdmin.maxLoginPerDevice}
             </div>
 
             <div className="mb-3">
@@ -599,6 +670,23 @@ const AdminManagement = () => {
                       className="border dark:border-zinc-600 bg-white dark:bg-zinc-700 text-black dark:text-white w-full px-4 py-2.5 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                      Max Login
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="e.g., 5"
+                      value={newAdmin.maxLoginPerDevice}
+                      onChange={(e) =>
+                        setNewAdmin({
+                          ...newAdmin,
+                          maxLoginPerDevice: Number(e.target.value),
+                        })
+                      }
+                      className="border dark:border-zinc-600 bg-white dark:bg-zinc-700 text-black dark:text-white w-full px-4 py-2.5 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -690,8 +778,7 @@ const AdminManagement = () => {
                                     setSubPermissionInput(e.target.value)
                                   }
                                   onKeyPress={(e) =>
-                                    e.key === "Enter" &&
-                                    addSubPermission(index)
+                                    e.key === "Enter" && addSubPermission(index)
                                   }
                                   className="flex-1 border dark:border-zinc-600 bg-white dark:bg-zinc-800 text-black dark:text-white px-3 py-1.5 rounded text-sm"
                                   autoFocus
@@ -765,6 +852,7 @@ const AdminManagement = () => {
                       email: "",
                       phone: "",
                       password: "",
+                      maxLoginPerDevice: "",
                       role: "Admin",
                       permissions: [],
                     });
@@ -782,7 +870,8 @@ const AdminManagement = () => {
                       !newAdmin.name ||
                       !newAdmin.email ||
                       !newAdmin.phone ||
-                      !newAdmin.password
+                      !newAdmin.password ||
+                      !newAdmin.maxLoginPerDevice
                     ) {
                       toast.error("Please fill in all required fields");
                       return;
@@ -793,6 +882,7 @@ const AdminManagement = () => {
                       email: newAdmin.email,
                       phone: newAdmin.phone,
                       password: newAdmin.password,
+                      maxLoginPerDevice: Number(newAdmin.maxLoginPerDevice),
                       role: newAdmin.role,
                       permissions: newAdmin.permissions,
                     };
@@ -819,14 +909,14 @@ const AdminManagement = () => {
                         password: "",
                         role: "Admin",
                         permissions: [],
+                        maxLoginPerDevice: "",
                       });
                       setPermissionInput("");
                       setSubPermissionInput("");
                       setSelectedParentIndex(null);
                     } catch (err) {
                       toast.error(
-                        err.response?.data?.message ||
-                          "Failed to create admin"
+                        err.response?.data?.message || "Failed to create admin"
                       );
                     }
                   }}
@@ -927,6 +1017,18 @@ const AdminManagement = () => {
                   placeholder="Enter admin name"
                 />
               </div>
+              <div className="mb-6">
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Max Device Login *
+                </label>
+                <input
+                  type="text"
+                  value={maxLoginPerDevice}
+                  onChange={(e) => setMaxLoginPerDevice(Number(e.target.value))}
+                  className="w-full px-4 py-2.5 border dark:border-zinc-600 rounded-lg dark:bg-zinc-700 dark:text-white focus:ring-2 focus:ring-blue-500 transition"
+                  placeholder="Enter max device login"
+                />
+              </div>
 
               {/* Permissions Section */}
               <div className="mb-6">
@@ -981,7 +1083,9 @@ const AdminManagement = () => {
                             <input
                               type="checkbox"
                               checked={perm.granted}
-                              onChange={() => toggleEditPermissionGranted(index)}
+                              onChange={() =>
+                                toggleEditPermissionGranted(index)
+                              }
                               className="w-4 h-4 accent-blue-600"
                             />
                             <span className="font-medium text-gray-800 dark:text-gray-200">
