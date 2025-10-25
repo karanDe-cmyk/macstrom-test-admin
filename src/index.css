@@ -1,0 +1,35 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Theme wrappers */
+.light-theme {
+  @apply bg-gradient-to-br from-slate-50 to-blue-50 text-gray-900;
+}
+
+.dark-theme {
+  @apply bg-gradient-to-br from-gray-900 to-gray-950 text-gray-100;
+}
+
+/* Card styles */
+.card-light {
+  @apply bg-white/70 border border-gray-200 text-gray-900;
+}
+
+.card-dark {
+  @apply bg-gray-800/80 border border-gray-700 text-gray-100;
+}
+
+/* Section wrappers */
+.section-light {
+  @apply bg-white/70 border border-gray-200;
+}
+
+.section-dark {
+  @apply bg-gray-800/70 border border-gray-700;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+}
