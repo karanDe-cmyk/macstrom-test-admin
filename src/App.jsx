@@ -104,7 +104,6 @@ import WinnerGroupMembers from "./pages/WinnerGroupMembers";
 import AllTransactions from "./pages/AllTrasactions";
 import NotificationsPage from './pages/NotificationsPage';
 import EditUserPage from './pages/EditUserPage';
-import AllTransactions from "./pages/AllTrasactions"; 
 import ActivityLog from "./pages/ActivityLog";
 import LoginHistory from "./pages/LoginHistory";
 import Modules from "./pages/Modules";
