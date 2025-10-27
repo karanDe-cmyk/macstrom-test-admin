@@ -104,6 +104,7 @@ import WinnerGroupMembers from "./pages/WinnerGroupMembers";
 import AllTransactions from "./pages/AllTrasactions"; 
 import ActivityLog from "./pages/ActivityLog";
 import LoginHistory from "./pages/LoginHistory";
+import Modules from "./pages/Modules";
 
 //  ProtectedRoute component
 function ProtectedRoute({ children }) {
@@ -208,6 +209,7 @@ function App() {
             <Route path="/admin-management" element={<AdminManagement />} />
             <Route path="/activity-logs" element={<ActivityLog />} />
             <Route path="/login-history" element={<LoginHistory />} />
+            <Route path="/modules" element={<Modules />} />
             <Route path="/system-health" element={<SystemHealth />} />
             <Route path="/audit-log" element={<AuditLogViewer />} />
             <Route path="/manual-ledger" element={<ManualLedger />} />
