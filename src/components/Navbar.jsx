@@ -4,6 +4,7 @@ import DarkModeToggle from "./DarkModeToggle";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import axiosInstance from "../utils/axios";
+import NotificationIcon from "./NotificationIcon";
 
 const getInitials = (name) => {
   if (!name) return "";
@@ -167,8 +168,25 @@ const Navbar = ({ onToggleSidebar }) => {
     newPassword: "",
   });
 
+  const [notifications, setNotifications] = useState([]);
+  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
+
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+
+  // Get user role from localStorage
+  const userRole = localStorage.getItem("role") || "";
+  const isSuperAdmin = userRole === "SuperAdmin";
+
+  useEffect(() => {
+    fetchUserData();
+    if (isSuperAdmin) {
+      fetchNotifications();
+      // Poll for new notifications every 30 seconds
+      const interval = setInterval(fetchNotifications, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isSuperAdmin]);
 
   useEffect(() => {
     fetchUserData();
@@ -196,9 +214,27 @@ const Navbar = ({ onToggleSidebar }) => {
     }
   };
 
+  const fetchNotifications = async () => {
+    if (!isSuperAdmin) return;
+
+    try {
+      const response = await axiosInstance.get("/auth/admin/notifications");
+      const notificationsData = response.data.notifications || [];
+      setNotifications(notificationsData);
+      setHasUnreadNotifications(notificationsData.some(notif => !notif.isRead));
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      // Don't show error toast for notifications to avoid spam
+    }
+  };
+
   const openProfile = async () => {
     setProfileOpen(true);
     await fetchUserData();
+  };
+
+  const handleNotificationsClick = () => {
+    navigate("/notifications");
   };
 
   // ✅ Replaced fetch PUT with axiosInstance
@@ -306,6 +342,13 @@ const Navbar = ({ onToggleSidebar }) => {
 
       <div className="flex items-center space-x-4 relative" ref={dropdownRef}>
         <DarkModeToggle />
+
+        {isSuperAdmin && (
+          <NotificationIcon 
+            hasUnread={hasUnreadNotifications}
+            onClick={handleNotificationsClick}
+          />
+        )}
         <span className="text-sm text-zinc-600 dark:text-zinc-300">
           {userData?.role || "Admin"}
         </span>

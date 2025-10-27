@@ -101,7 +101,9 @@ import GroupMembers from "./pages/GroupMembers";
 import ImbGatewayStatus from "./pages/ImbGatewayStatus";
 import TournamentWinnerGroups from "./pages/TournamentWinnerGroups";
 import WinnerGroupMembers from "./pages/WinnerGroupMembers";
-import AllTransactions from "./pages/AllTrasactions"; 
+import AllTransactions from "./pages/AllTrasactions";
+import NotificationsPage from './pages/NotificationsPage';
+import EditUserPage from './pages/EditUserPage';
 
 //  ProtectedRoute component
 function ProtectedRoute({ children }) {
@@ -171,7 +173,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
         </Routes>
-          <ToastContainer position="top-right" autoClose={3000} theme="colored" />
+        <ToastContainer position="top-right" autoClose={3000} theme="colored" />
       </div>
     );
   }
@@ -252,7 +254,7 @@ function App() {
             <Route path="/createblog" element={<BlogCreate />} />
             <Route path="/createblog/edit/:id" element={<BlogCreate />} />
             <Route path="/editblog/:id" element={<BlogCreate />} />
-            <Route path ="/rules-regulations" element={<RulesRegulations />} />
+            <Route path="/rules-regulations" element={<RulesRegulations />} />
             <Route path="/watch-earn" element={<WatchEarn />} />
             <Route path="/payment-gateway" element={<PaymentGateway />} />
             <Route path="/generate-invoice" element={<Invoice />} />
@@ -270,17 +272,17 @@ function App() {
             <Route path="/email-controls" element={<EmailNotificationControl />} />
             <Route path="/subscription-members" element={<SubscriptionMembers />} />
             <Route path="/live/:streamKey" element={<LiveStream />} />
-     
-              <Route path="/group-members/:gameType/:groupId" element={<GroupMembers />} />
+
+            <Route path="/group-members/:gameType/:groupId" element={<GroupMembers />} />
             <Route path="/imb-gateway-status" element={<ImbGatewayStatus />} />
             <Route path="/winner-groups" element={<TournamentWinnerGroups />} />
             <Route path="/winner-group-members/:gameType/:groupId" element={<WinnerGroupMembers />} />
-            <Route path="/all-transactions" element={<AllTransactions />} />  
-
-
+            <Route path="/all-transactions" element={<AllTransactions />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/users/edit/:id" element={<EditUserPage />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
-           <ToastContainer position="top-right" autoClose={3000} theme="colored" />
+          <ToastContainer position="top-right" autoClose={3000} theme="colored" />
         </div>
       </div>
     </ProtectedRoute>

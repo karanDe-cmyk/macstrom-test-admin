@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { Eye, Edit, Trash2 } from "lucide-react";
+import { Eye, Edit, Trash2, Ban, UserCheck } from "lucide-react";
 import "react-toastify/dist/ReactToastify.css";
 import axiosInstance from "../utils/axios";
+import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
+import EditRequestModal from "../components/EditRequestModal";
+import { useNavigate } from "react-router-dom";
+import { getUserIdFromToken, getUserNameFromToken } from '../utils/jwtUtils';
 
-const Table = ({ columns, data, onEdit, onDelete, onViewDetails }) => {
+const Table = ({ columns, data, onEdit, onDelete, onViewDetails, onBan, userRole }) => {
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -22,7 +26,7 @@ const Table = ({ columns, data, onEdit, onDelete, onViewDetails }) => {
         </thead>
         <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
           {data.map((row, index) => (
-            <tr key={index}>
+            <tr key={index} className={row?.member_status === 0 ? "bg-red-50 dark:bg-red-900/20" : ""}>
               {columns.map((col) => (
                 <td
                   key={col.key}
@@ -35,23 +39,46 @@ const Table = ({ columns, data, onEdit, onDelete, onViewDetails }) => {
                         className="text-blue-600 hover:text-blue-900 transition-colors"
                         title="View Details"
                       >
-                       <Eye size={18} />
+                        <Eye size={18} />
                       </button>
                       <button
                         onClick={() => onEdit(row)}
-                        className="text-indigo-600 hover:text-indigo-900 transition-colors"
-                         title="Edit User"
+                        className={`flex items-center justify-center transition-colors ${userRole === "SuperAdmin"
+                          ? "text-indigo-600 hover:text-indigo-900"
+                          : "text-purple-600 hover:text-purple-900"
+                          }`}
+                        title={userRole === "SuperAdmin" ? "Edit User" : "Request Edit"}
                       >
-                         <Edit size={18} />
+                        <Edit size={18} />
+                      </button>
+                      <button
+                        onClick={() => onBan(row)}
+                        disabled={row?.member_status === 0} // YEH LINE ADD KARO
+                        className={`transition-colors ${row?.member_status === 0 && userRole === "Admin"
+                          ? "text-gray-400 cursor-not-allowed" // Disabled style
+                          : "text-orange-600 hover:text-orange-900"
+                          }`}
+                        title={row?.member_status === 0 ? "User is Banned" : "Ban User"}
+                      >
+                        {row?.member_status === 0 ? <UserCheck size={18} /> : <Ban size={18} />}
                       </button>
                       <button
                         onClick={() => onDelete(row)}
                         className="text-red-600 hover:text-red-900 transition-colors"
-                          title="Delete User"
+                        title="Delete User"
                       >
                         <Trash2 size={18} />
                       </button>
                     </div>
+                  ) : col.key === "member_status" ? (
+                    <span
+                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${row.member_status === 0
+                        ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                        : "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                        }`}
+                    >
+                      {row.member_status === 0 ? "Banned" : "Active"}
+                    </span>
                   ) : (
                     row[col.key]
                   )}
@@ -73,9 +100,14 @@ function UsersPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isEditRequestModalOpen, setIsEditRequestModalOpen] = useState(false);
+  const [isBanModalOpen, setIsBanModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [newUserName, setNewUserName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
+  // Get user role from localStorage
+  const [userRole, setUserRole] = useState("SuperAdmin");
 
   const columns = [
     { key: "sr_no", label: "Sr No." },
@@ -86,8 +118,17 @@ function UsersPage() {
     { key: "shear_referral_code", label: "Referral Code" },
     { key: "totalUsersReferred", label: "Users Referred" },
     { key: "totalAmountEarned", label: "Amount Earned" },
+    { key: "member_status", label: "Status" },
     { key: "actions", label: "Actions" },
   ];
+
+  // Get user role from localStorage on component mount
+  useEffect(() => {
+    const role = localStorage.getItem("role");
+    if (role) {
+      setUserRole(role);
+    }
+  }, []);
 
   const fetchUsers = async () => {
     try {
@@ -99,6 +140,8 @@ function UsersPage() {
         totalUsersReferred: user.referralStats?.totalUsersReferred || 0,
         totalAmountEarned: user.referralStats?.totalAmountEarned || 0,
         wallet_balance: user.wallet_balance || "0.00",
+        // Remove is_banned and use member_status directly
+        // member_status: user.member_status || 1, // Default to 1 (Active) if not provided
       }));
       setUsers(formattedUsers);
       setTotalUsers(formattedUsers.length);
@@ -143,9 +186,47 @@ function UsersPage() {
 
   const handleEdit = (row) => {
     setSelectedUser(row);
-    setNewUserName(row.user_name || "");
-    setIsEditModalOpen(true);
+
+    if (userRole === "SuperAdmin") {
+      // SuperAdmin directly edit page par jaye
+      navigate(`/users/edit/${row.member_id}`);
+    } else {
+      // Other roles ke liye edit request modal open kare
+      setIsEditRequestModalOpen(true);
+    }
   };
+
+  const sendEditRequest = async (memberId, reason) => {
+    try {
+      // Get current admin/user ID from JWT token
+      const requested_by = getUserIdFromToken();
+
+      if (!requested_by) {
+        toast.error("Unable to identify requester. Please login again.");
+        return;
+      }
+
+      const response = await axiosInstance.post(`/auth/user/edit-request`, {
+        member_id: memberId,
+        reason: reason,
+        requested_by: requested_by,
+      });
+
+      toast.success("Edit request sent successfully to Super Admin");
+      return response.data;
+    } catch (err) {
+      console.error("Edit request error:", err);
+
+      if (err.response?.data?.message) {
+        toast.error(err.response.data.message);
+      } else {
+        toast.error("Failed to send edit request");
+      }
+      throw err;
+    }
+  };
+
+
 
   const saveEdit = async () => {
     if (!newUserName || newUserName === selectedUser.user_name) {
@@ -176,11 +257,12 @@ function UsersPage() {
     setIsDeleteModalOpen(true);
   };
 
-  const confirmDelete = async () => {
+  // Super admin delete function
+  const deleteUser = async (memberId) => {
     try {
-      await axiosInstance.delete(`/auth/user/${selectedUser.member_id}`);
+      await axiosInstance.delete(`/auth/user?id=${memberId}`);
       const updatedUsers = users.filter(
-        (user) => user.member_id !== selectedUser.member_id
+        (user) => user.member_id !== memberId
       );
       setUsers(updatedUsers);
       setTotalUsers(updatedUsers.length);
@@ -189,10 +271,32 @@ function UsersPage() {
         setCurrentPage(newTotalPages);
       }
       toast.success("User deleted successfully");
-      setIsDeleteModalOpen(false);
     } catch (err) {
       console.error("Delete error:", err);
       toast.error("Failed to delete user");
+    }
+  };
+
+  // Admin delete request function
+  const deleteRequest = async (memberId, reason) => {
+    try {
+      await axiosInstance.post(`/auth/user/delete-request`, {
+        member_id: memberId,
+        reason: reason || "Requested by admin",
+      });
+      toast.success("Delete request sent successfully");
+    } catch (err) {
+      console.error("Delete request error:", err);
+      toast.error("Failed to send delete request");
+    }
+  };
+
+  // Combined delete confirmation handler
+  const handleDeleteConfirm = async (memberId, reason) => {
+    if (userRole === "SuperAdmin") {
+      await deleteUser(memberId);
+    } else {
+      await deleteRequest(memberId, reason);
     }
   };
 
@@ -200,6 +304,41 @@ function UsersPage() {
     setSelectedUser(row);
     setIsDetailsModalOpen(true);
   };
+
+  const handleBan = (row) => {
+    setSelectedUser(row);
+    setIsBanModalOpen(true);
+  };
+
+  const confirmBan = async () => {
+    try {
+      const action = selectedUser.member_status === 0 ? "unban" : "ban";
+      action === 'ban' ? await axiosInstance.put(`/v1/user/${selectedUser.member_id}`, {
+        member_status: 1
+      }) : await axiosInstance.put(`/v1/user/${selectedUser.member_id}`, {
+        member_status: 0
+      });
+
+      setUsers((prevUsers) =>
+        prevUsers.map((user) =>
+          user.member_id === selectedUser.member_id
+            ? {
+              ...user,
+              member_status: action === "ban" ? 0 : 1
+            }
+            : user
+        )
+      );
+
+      toast.success(`User ${action === "ban" ? "banned" : "unbanned"} successfully`);
+      setIsBanModalOpen(false);
+    } catch (err) {
+      console.error("Ban error:", err);
+      toast.error(`Failed to ${selectedUser.member_status === 0 ? "unban" : "ban"} user`);
+    }
+  };
+
+
 
   const Pagination = () => {
     const pageNumbers = [];
@@ -226,11 +365,10 @@ function UsersPage() {
           <button
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              currentPage === 1
-                ? "text-gray-400 dark:text-gray-600 cursor-not-allowed"
-                : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-            }`}
+            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentPage === 1
+              ? "text-gray-400 dark:text-gray-600 cursor-not-allowed"
+              : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              }`}
           >
             Previous
           </button>
@@ -253,11 +391,10 @@ function UsersPage() {
             <button
               key={number}
               onClick={() => handlePageChange(number)}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                currentPage === number
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-              }`}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentPage === number
+                ? "bg-blue-600 text-white"
+                : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                }`}
             >
               {number}
             </button>
@@ -280,11 +417,10 @@ function UsersPage() {
           <button
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              currentPage === totalPages
-                ? "text-gray-400 dark:text-gray-600 cursor-not-allowed"
-                : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-            }`}
+            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentPage === totalPages
+              ? "text-gray-400 dark:text-gray-600 cursor-not-allowed"
+              : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              }`}
           >
             Next
           </button>
@@ -292,6 +428,7 @@ function UsersPage() {
       </div>
     );
   };
+
 
   return (
     <div className="p-6 min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -451,28 +588,20 @@ function UsersPage() {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onViewDetails={handleViewDetails}
+            onBan={handleBan}
+            userRole={userRole}
           />
           {totalPages > 1 && <Pagination />}
         </div>
       </div>
+
+      {/* Edit Modal */}
       {isEditModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 w-96 mx-4 transform transition-all">
             <div className="flex items-center mb-6">
               <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900 mr-4">
-                <svg
-                  className="w-6 h-6 text-blue-600 dark:text-blue-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                  />
-                </svg>
+                <Edit className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                 Edit User
@@ -517,81 +646,98 @@ function UsersPage() {
           </div>
         </div>
       )}
-      {isDeleteModalOpen && (
+
+      {/* Delete Modal */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        user={selectedUser}
+        userRole={userRole}
+      />
+
+      {isBanModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 w-96 mx-4 transform transition-all">
             <div className="flex items-center mb-6">
-              <div className="p-3 rounded-full bg-red-100 dark:bg-red-900 mr-4">
-                <svg
-                  className="w-6 h-6 text-red-600 dark:text-red-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
+              <div className={`p-3 rounded-full mr-4 ${selectedUser?.member_status === 0
+                ? "bg-green-100 dark:bg-green-900"
+                : "bg-orange-100 dark:bg-orange-900"
+                }`}>
+                {selectedUser?.member_status === 0 ? (
+                  <UserCheck className="w-6 h-6 text-green-600 dark:text-green-400" />
+                ) : (
+                  <Ban className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+                )}
               </div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                Delete User
+                {selectedUser?.member_status === 0 ? "Unban User" : "Ban User"}
               </h2>
             </div>
             <div className="mb-6">
               <p className="text-gray-600 dark:text-gray-300 mb-3">
-                Are you sure you want to delete{" "}
+                Are you sure you want to {selectedUser?.member_status === 0 ? "unban" : "ban"}{" "}
                 <span className="font-bold text-gray-900 dark:text-white">
                   {selectedUser?.user_name}
                 </span>
                 ?
               </p>
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-                <p className="text-sm text-red-700 dark:text-red-400 mb-1">
+              <div className={`rounded-lg p-4 ${selectedUser?.member_status === 0
+                ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
+                : "bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800"
+                }`}>
+                <p className={`text-sm mb-1 ${selectedUser?.member_status === 0
+                  ? "text-green-700 dark:text-green-400"
+                  : "text-orange-700 dark:text-orange-400"
+                  }`}>
                   <strong>Member ID:</strong> #{selectedUser?.member_id}
                 </p>
-                <p className="text-sm text-red-600 dark:text-red-400">
-                  This action cannot be undone.
+                <p className={`text-sm ${selectedUser?.member_status === 0
+                  ? "text-green-600 dark:text-green-300"
+                  : "text-orange-600 dark:text-orange-300"
+                  }`}>
+                  {selectedUser?.member_status === 0
+                    ? "User will be able to access the platform again."
+                    : "User will be restricted from accessing the platform."}
                 </p>
               </div>
             </div>
             <div className="flex justify-end space-x-3">
               <button
-                onClick={() => setIsDeleteModalOpen(false)}
+                onClick={() => setIsBanModalOpen(false)}
                 className="px-6 py-3 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium transition-colors"
               >
                 Cancel
               </button>
               <button
-                onClick={confirmDelete}
-                className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors shadow-lg"
+                onClick={confirmBan}
+                className={`px-6 py-3 text-white rounded-lg font-medium transition-colors shadow-lg ${selectedUser?.member_status === 0
+                  ? "bg-green-600 hover:bg-green-700"
+                  : "bg-orange-600 hover:bg-orange-700"
+                  }`}
               >
-                Delete User
+                {selectedUser?.member_status === 0 ? "Unban User" : "Ban User"}
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Edit Request Modal */}
+      <EditRequestModal
+        isOpen={isEditRequestModalOpen}
+        onClose={() => setIsEditRequestModalOpen(false)}
+        onConfirm={sendEditRequest}
+        user={selectedUser}
+      />
+
+      {/* Details Modal */}
       {isDetailsModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 w-full max-w-4xl mx-4 transform transition-all max-h-[90vh] overflow-y-auto">
             <div className="flex items-center mb-6">
               <div className="p-3 rounded-full bg-green-100 dark:bg-green-900 mr-4">
-                <svg
-                  className="w-6 h-6 text-green-600 dark:text-green-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
+                <Eye className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                 User Details
@@ -622,6 +768,17 @@ function UsersPage() {
                   <p className="text-sm">
                     <span className="font-medium">Referral Code:</span>{" "}
                     {selectedUser?.shear_referral_code}
+                  </p>
+                  <p className="text-sm">
+                    <span className="font-medium">Status:</span>{" "}
+                    <span
+                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${selectedUser?.member_status === 0
+                        ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                        : "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                        }`}
+                    >
+                      {selectedUser?.member_status === 0 ? "Banned" : "Active"}
+                    </span>
                   </p>
                 </div>
               </div>
@@ -673,11 +830,10 @@ function UsersPage() {
                             </td>
                             <td className="px-4 py-3 text-sm">
                               <span
-                                className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                  detail.creditedTo === "referrer"
-                                    ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                                    : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                                }`}
+                                className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${detail.creditedTo === "referrer"
+                                  ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                                  : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                                  }`}
                               >
                                 {detail.creditedTo}
                               </span>

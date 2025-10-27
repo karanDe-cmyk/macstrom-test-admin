@@ -1,7 +1,7 @@
-// import axios from 'axios'
+import axios from 'axios'
 
 // const axiosInstance = axios.create({
-//     // baseURL: 'http://localhost:5000/api',
+//     // baseURL: 'https://macstrombattle-api.kglame.com/api',
 //     baseURL:'https://macstrombattle-api.kglame.com/api',
 //     withCredentials: true,
 //     headers: {
@@ -10,12 +10,15 @@
 // });
 // export default axiosInstance;      
 
-import axios from 'axios';
-
 const axiosInstance = axios.create({
   baseURL: 'https://macstrombattle-api.kglame.com/api',
   withCredentials: true,
 });
+
+// const axiosInstance = axios.create({
+//   baseURL: 'https://macstrombattle-api.kglame.com/api',
+//   withCredentials: true,
+// });
 
 // Interceptor to attach token dynamically on every request
 axiosInstance.interceptors.request.use(

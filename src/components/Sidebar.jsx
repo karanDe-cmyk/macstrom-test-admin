@@ -235,6 +235,7 @@ const Sidebar = () => {
         const { userId, role } = decoded;
         
         console.log("Decoded token - UserId:", userId, "Role:", role);
+        localStorage.setItem("role", role);
         setUserRole(role);
 
         // If SuperAdmin, grant all permissions
@@ -451,10 +452,6 @@ const Sidebar = () => {
 
   // Filter menu items based on permissions
   const filteredMenuItems = filterMenuItemsByPermission(menuItems);
-
-  console.log("Filtered menu items:", filteredMenuItems.map(item => item.label));
-  console.log("Admin permissions:", adminPermissions);
-  console.log("User role:", userRole);
 
   if (loading) {
     return (
