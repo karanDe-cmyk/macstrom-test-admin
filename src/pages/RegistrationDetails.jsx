@@ -4,7 +4,7 @@ import axios from 'axios';
 
 // Axios instance configuration
 const axiosInstance = axios.create({
-  baseURL: 'https://api-v1.macstrombattle.com/api',
+  baseURL: 'https://macstrombattle-api.kglame.com/api',
   withCredentials: true,
   headers: {
     Authorization: `Bearer ${localStorage.getItem("authToken")}`,

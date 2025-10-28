@@ -549,7 +549,7 @@ const Dashboard = () => {
     </p>
   </div>
 
-  {/* ✅ Centered Total Tournaments */}
+  {/*Centered Total Tournaments */}
   <div className={`text-center p-4 rounded-xl col-span-2 mx-auto w-1/2 ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
     <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Tournaments</p>
     <p className={`text-lg font-semibold ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>

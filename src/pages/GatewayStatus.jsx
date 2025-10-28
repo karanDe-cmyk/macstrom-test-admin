@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { RefreshCw, Plus, Trash2, Power, PowerOff, AlertCircle } from 'lucide-react';
 
-const API_BASE_URL = 'https://api-v1.macstrombattle.com/api/payment-gateway-status';
+const API_BASE_URL = 'https://macstrombattle-api.kglame.com/api/payment-gateway-status';
 
 export default function PaymentGatewayManager() {
   const [gateways, setGateways] = useState([]);

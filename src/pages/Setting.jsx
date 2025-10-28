@@ -7,6 +7,7 @@ import {
   Security, Group, IntegrationInstructions, Backup
 } from '@mui/icons-material';
 import {Gift } from 'lucide-react';
+import { jwtDecode } from 'jwt-decode';
 
 import General from './settings/General';
 import SocialMedia from './settings/SocialMedia';
@@ -19,6 +20,7 @@ import BackupRecovery from './settings/backup-recovery';
 import FAQComponent from './settings/faq-component';
 import Integration from './settings/Integration';
 import Bonus from './settings/Bonus';
+import EnvConfig from './settings/EnvConfig';
 
 const TabPanel = ({ children, value, index }) => {
   return (
@@ -32,6 +34,18 @@ const Setting = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm')); // screen < 600px
   const [value, setValue] = useState(0);
+   
+    const token = localStorage.getItem("authToken");
+  let userRole = null;
+
+  if (token) {
+    try {
+      const decoded = jwtDecode(token);
+      userRole = decoded.role?.toLowerCase();  // depends on your backend payload
+    } catch (err) {
+      console.error("Invalid token:", err);
+    }
+  }
 
   const tabs = [
     { label: 'General', icon: <Settings />, component: <General /> },
@@ -42,6 +56,10 @@ const Setting = () => {
     { label: 'Security', icon: <Security />, component: <SecuritySettings /> },
     { label: 'Roles', icon: <Group />, component: <AdminRoles /> },
     { label: 'Integration', icon: <IntegrationInstructions />, component: <Integration /> },
+    // { label: 'Environment Config', icon: <Security />, component: <EnvConfig /> },
+    ...(userRole === "superadmin"
+      ? [{ label: 'Environment Config', icon: <Security />, component: <EnvConfig /> }]
+      : []),
     // { label: 'Bonus', icon: <Gift />, component: <Bonus /> },
     // { label: 'Backup', icon: <Backup />, component: <BackupRecovery /> },
   ];

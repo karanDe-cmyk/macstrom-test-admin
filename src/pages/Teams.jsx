@@ -22,7 +22,6 @@ import {
 import ThemeContext from '../contexts/ThemeContext';
 import axiosInstance from "../utils/axios";
 
-const API_BASE_URL = "https://api-v1.macstrombattle.com/api";
 
 // Dark Mode Toggle Component
 const DarkModeToggle = () => {

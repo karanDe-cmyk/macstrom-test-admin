@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Save, X, Search, ChevronLeft, ChevronRight, Loader } from 'lucide-react';
 import axios from 'axios';
+import axiosInstance from '../utils/axios';
 
 const RulesAdminPanel = () => {
   const [rules, setRules] = useState([]);
@@ -22,7 +23,7 @@ const RulesAdminPanel = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const API_BASE = 'https://api-v1.macstrombattle.com/api';
+  const API_BASE = 'https://macstrombattle-api.kglame.com/api';
 
   const types = [
     { value: 'eligibility', label: 'Eligibility' },
@@ -41,7 +42,7 @@ const RulesAdminPanel = () => {
     try {
       setLoading(true);
       setError('');
-      const response = await axios.get(`${API_BASE}/rule-regulation`);
+      const response = await axiosInstance.get(`${API_BASE}/rule-regulation`);
       
       // Transform API data to match component structure
       const transformedRules = response.data.map(rule => ({
@@ -115,7 +116,7 @@ const RulesAdminPanel = () => {
     if (window.confirm('Are you sure you want to delete this rule? This action cannot be undone.')) {
       try {
         setLoading(true);
-        await axios.delete(`${API_BASE}/rule-regulation/${id}`);
+        await axiosInstance.delete(`${API_BASE}/rule-regulation/${id}`);
         await fetchRules(); // Refresh the list
       } catch (err) {
         console.error('Error deleting rule:', err);
@@ -152,9 +153,9 @@ const RulesAdminPanel = () => {
       };
 
       if (editingRule) {
-        await axios.put(`${API_BASE}/rule-regulation/${editingRule.id}`, payload);
+        await axiosInstance.put(`${API_BASE}/rule-regulation/${editingRule.id}`, payload);
       } else {
-        await axios.post(`${API_BASE}/rule-regulation`, payload);
+        await axiosInstance.post(`${API_BASE}/rule-regulation`, payload);
       }
       
       setIsModalOpen(false);

@@ -23,7 +23,7 @@ export default function ApkUploadForm() {
   const fetchExistingApps = async () => {
     setLoading(true);
     try {
-      const response = await fetch('https://api-v1.macstrombattle.com/api/app-updates');
+      const response = await fetch('https://macstrombattle-api.kglame.com/api/app-updates');
       if (response.ok) {
         const data = await response.json();
         setExistingApps(data.items || []);
@@ -124,7 +124,7 @@ export default function ApkUploadForm() {
         formDataToSend.append('apk', formData.apkFile);
       }
 
-      const response = await fetch(`https://api-v1.macstrombattle.com/api/app-updates/${selectedAppId}`, {
+      const response = await fetch(`https://macstrombattle-api.kglame.com/api/app-updates/${selectedAppId}`, {
         method: 'PUT',
         body: formDataToSend,
       });

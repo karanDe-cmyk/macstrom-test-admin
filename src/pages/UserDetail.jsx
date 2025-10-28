@@ -44,7 +44,7 @@ export default function UserDetail({ user, onBack, onKycStatusChange, authToken 
     const fetchKycData = async () => {
       setLoadingKyc(true)
       try {
-        const response = await fetch(`https://api-v1.macstrombattle.com/api/userkyc/user/${userId}`, {
+        const response = await fetch(`https://macstrombattle-api.kglame.com/api/userkyc/user/${userId}`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",

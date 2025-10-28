@@ -7,6 +7,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import axios from "axios";
 import { useEffect } from "react";
+import axiosInstance from "../utils/axios";
 
 
 
@@ -26,7 +27,7 @@ function ImageGallery() {
 
     const fetchImages = async () => {
         try {
-            const res = await axios.get("https://api-v1.macstrombattle.com/api/auth/admin/images");
+            const res = await axiosInstance.get("/auth/admin/images");
             setImages(res.data.data);
         } catch (err) {
             console.error("Failed to fetch images", err);
@@ -64,7 +65,7 @@ function ImageGallery() {
     if (!window.confirm("Delete this image?")) return;
 
     try {
-        await axios.delete(`https://api-v1.macstrombattle.com/api/auth/admin/images/${id}`);
+        await axiosInstance.delete(`/auth/admin/images/${id}`);
         setImages(images.filter((img) => img.id !== id));
         setSelectedImages(selectedImages.filter((i) => i !== id));
     } catch (err) {
@@ -92,7 +93,7 @@ function ImageGallery() {
       formData.append("title", newImage.title);
       formData.append("image", newImage.file);
 
-      const res = await axios.post("https://api-v1.macstrombattle.com/api/auth/admin/images", formData, {
+      const res = await axiosInstance.post("/auth/admin/images", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -112,8 +113,8 @@ function ImageGallery() {
         formData.append("image", updatedImage.file);
         }
 
-        const res = await axios.put(
-        `https://api-v1.macstrombattle.com/api/auth/admin/images/${updatedImage.id}`,
+        const res = await axiosInstance.put(
+        `/auth/admin/images/${updatedImage.id}`,
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
         );
