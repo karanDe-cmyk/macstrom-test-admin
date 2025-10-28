@@ -66,6 +66,7 @@ const menuItems = [
       // { label: "Group Management", path: "/group-management", permissionKey: "Group Management" },
       // { label: "Prize Distribution", path: "/prize-distribution", permissionKey: "Prize Distribution" },
       { label: "Rules&Regulations", path: "/rules-regulations", permissionKey: "Rules&Regulations" },
+      { label: "Teams Management", path: "/teams-management", permissionKey: "Teams Management" },
     ],
   },
   {
@@ -116,6 +117,7 @@ const menuItems = [
     subItems: [
       { label: "Stats", path: "/website-stats", permissionKey: "Stats" },
       { label: "Contact Us", path: "/contactus", permissionKey: "Contact Us" },
+      { label: "Support", path: "/support-subject", permissionKey: "Support" },
     ],
   },
   {
