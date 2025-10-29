@@ -34,13 +34,13 @@ const Table = ({ columns, data, onEdit, onDelete, onViewDetails, onBan, userRole
                 >
                   {col.key === "actions" ? (
                     <div className="flex space-x-2">
-                      <button
+                      {/* <button
                         onClick={() => onViewDetails(row)}
                         className="text-blue-600 hover:text-blue-900 transition-colors"
                         title="View Details"
                       >
                         <Eye size={18} />
-                      </button>
+                      </button> */}
                       <button
                         onClick={() => onEdit(row)}
                         className={`flex items-center justify-center transition-colors ${userRole === "SuperAdmin"

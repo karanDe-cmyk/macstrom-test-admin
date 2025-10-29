@@ -15,47 +15,60 @@ import {
   Loader2,
   X,
 } from "lucide-react"
+import axiosInstance from "../utils/axios"
 
 // API Configuration
-const API_BASE_URL = "http://localhost:5000/api"
-const AUTH_TOKEN = localStorage.getItem("authToken") || "your_default_token_here" // Replace with your actual token or logic to get it
+// const API_BASE_URL = "http://localhost:5000/api"
+// const AUTH_TOKEN = localStorage.getItem("authToken") || "your_default_token_here" // Replace with your actual token or logic to get it
 
 // API helper functions
-const apiRequest = async (url, options = {}) => {
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        Authorization: `Bearer ${AUTH_TOKEN}`,
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-    })
+// const apiRequest = async (url, options = {}) => {
+//   try {
+//     const response = await fetch(url, {
+//       ...options,
+//       headers: {
+//         Authorization: `Bearer ${AUTH_TOKEN}`,
+//         "Content-Type": "application/json",
+//         ...options.headers,
+//       },
+//     })
 
-    if (!response.ok) {
-      const errorData = await response.text()
-      console.error("API Error Response:", errorData)
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
+//     if (!response.ok) {
+//       const errorData = await response.text()
+//       console.error("API Error Response:", errorData)
+//       throw new Error(`HTTP error! status: ${response.status}`)
+//     }
 
-    return await response.json()
-  } catch (error) {
-    console.error("API request failed:", error)
-    throw error
-  }
-}
+//     return await response.json()
+//   } catch (error) {
+//     console.error("API request failed:", error)
+//     throw error
+//   }
+// }
 
-const fetchContestTeams = (contestId) => apiRequest(`${API_BASE_URL}/duo-contests/${contestId}/teams`)
+export const fetchContestTeams = async (contestId) => {
+  const { data } = await axiosInstance.get(`/duo-contests/${contestId}/teams`);
+  return data;
+};
 
-const fetchContestDetails = (contestId) => apiRequest(`${API_BASE_URL}/duo-contests/${contestId}`)
+// ✅ Fetch Duo Contest details
+export const fetchContestDetails = async (contestId) => {
+  const { data } = await axiosInstance.get(`/duo-contests/${contestId}`);
+  return data;
+};
 
-const fetchContestResults = (contestId) => apiRequest(`${API_BASE_URL}/duo-contests/${contestId}/results`)
+// ✅ Fetch contest results
+export const fetchContestResults = async (contestId) => {
+  const { data } = await axiosInstance.get(`/duo-contests/${contestId}/results`);
+  return data;
+};
 
-const declareResults = (contestId, resultsData) =>
-  apiRequest(`${API_BASE_URL}/duo-contests/${contestId}/declare`, {
-    method: "POST",
-    body: JSON.stringify(resultsData),
-  })
+// ✅ Declare results (POST)
+export const declareResults = async (contestId, resultsData) => {
+  const { data } = await axiosInstance.post(`/duo-contests/${contestId}/declare`, resultsData);
+  return data;
+};
+
 
 // Rank badge component
 const RankBadge = ({ rank }) => {
@@ -126,7 +139,7 @@ export default function DuoContestResultDeclaration() {
   const convertTeamsToPlayersAndTeams = (teamsData) => {
     const players = []
     const teamsArray = []
-    
+
     Object.entries(teamsData).forEach(([teamId, teamPlayers]) => {
       // Create team object
       const teamInfo = {
@@ -274,7 +287,7 @@ export default function DuoContestResultDeclaration() {
         if (winner.rank === rank) {
           const player1 = team.players[0] || { member_id: "", username: "" }
           const player2 = team.players[1] || { member_id: "", username: "" }
-          
+
           return {
             ...winner,
             team_id: team.team_id,
@@ -644,13 +657,12 @@ export default function DuoContestResultDeclaration() {
       {/* Toast Notification */}
       {toast && (
         <div
-          className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg transition-all duration-300 ${
-            toast.type === "success"
-              ? "bg-green-500 text-white"
-              : toast.type === "error"
-                ? "bg-red-500 text-white"
-                : "bg-blue-500 text-white"
-          }`}
+          className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg transition-all duration-300 ${toast.type === "success"
+            ? "bg-green-500 text-white"
+            : toast.type === "error"
+              ? "bg-red-500 text-white"
+              : "bg-blue-500 text-white"
+            }`}
         >
           <div className="flex items-center gap-2">
             {toast.type === "success" && <CheckCircle className="w-5 h-5" />}
@@ -682,15 +694,14 @@ export default function DuoContestResultDeclaration() {
                     Contest #{contest.contest_id || contest.id}
                   </span>
                   <span
-                    className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      contest.match_status === "live"
-                        ? "bg-red-500 animate-pulse"
-                        : isDeclared
-                          ? "bg-green-500"
-                          : isContestCompleted
-                            ? "bg-yellow-500"
-                            : "bg-gray-500"
-                    }`}
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${contest.match_status === "live"
+                      ? "bg-red-500 animate-pulse"
+                      : isDeclared
+                        ? "bg-green-500"
+                        : isContestCompleted
+                          ? "bg-yellow-500"
+                          : "bg-gray-500"
+                      }`}
                   >
                     {isDeclared ? "RESULTS DECLARED" : contest.match_status?.toUpperCase() || "PENDING"}
                   </span>
@@ -807,9 +818,8 @@ export default function DuoContestResultDeclaration() {
                           }
                           disabled={isDeclared}
                           placeholder={isDeclared ? "Selected Team" : "Search and select team..."}
-                          className={`flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:outline-none ${
-                            isDeclared ? "bg-gray-100 cursor-not-allowed" : "focus:ring-2 focus:ring-blue-500"
-                          }`}
+                          className={`flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:outline-none ${isDeclared ? "bg-gray-100 cursor-not-allowed" : "focus:ring-2 focus:ring-blue-500"
+                            }`}
                         />
                         {winner.team_id && !isDeclared && (
                           <button
@@ -884,9 +894,8 @@ export default function DuoContestResultDeclaration() {
                           }
                           disabled={isDeclared}
                           placeholder={isDeclared ? "Player Name" : "Type player name..."}
-                          className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none ${
-                            isDeclared ? "bg-gray-100 cursor-not-allowed" : "focus:ring-2 focus:ring-blue-500"
-                          }`}
+                          className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none ${isDeclared ? "bg-gray-100 cursor-not-allowed" : "focus:ring-2 focus:ring-blue-500"
+                            }`}
                         />
 
                         {/* Dropdown for player 1 */}
@@ -953,9 +962,8 @@ export default function DuoContestResultDeclaration() {
                           }
                           disabled={isDeclared}
                           placeholder={isDeclared ? "Player Name" : "Type player name..."}
-                          className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none ${
-                            isDeclared ? "bg-gray-100 cursor-not-allowed" : "focus:ring-2 focus:ring-blue-500"
-                          }`}
+                          className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none ${isDeclared ? "bg-gray-100 cursor-not-allowed" : "focus:ring-2 focus:ring-blue-500"
+                            }`}
                         />
 
                         {/* Dropdown for player 2 */}
@@ -992,11 +1000,10 @@ export default function DuoContestResultDeclaration() {
               <button
                 onClick={declareResultsHandler}
                 disabled={isDeclareButtonDisabled}
-                className={`flex items-center px-8 py-3 rounded-lg transition-all duration-200 ${
-                  isDeclareButtonDisabled
-                    ? "bg-gray-400 text-gray-600 cursor-not-allowed"
-                    : "bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700"
-                }`}
+                className={`flex items-center px-8 py-3 rounded-lg transition-all duration-200 ${isDeclareButtonDisabled
+                  ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+                  : "bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700"
+                  }`}
               >
                 {isSubmitting ? (
                   <>

@@ -12,8 +12,8 @@ import axios from 'axios'
 
 const axiosInstance = axios.create({
   // baseURL: 'https://api-v1.macstrombattle.com/api',
-  // baseURL: 'http://localhost:5000/api',
-   baseURL: 'https://dev-macstrombattle-api.kglame.com/api',
+  // baseURL: 'https://macstrombattle-api.kglame.com/api',
+  baseURL: 'http://localhost:5000/api',
   withCredentials: true,
 });
 
@@ -42,7 +42,7 @@ axiosInstance.interceptors.request.use(
     } else {
       delete config.headers.Authorization; // remove header if no token
     }
-    
+
     return config;
   },
   (error) => Promise.reject(error)

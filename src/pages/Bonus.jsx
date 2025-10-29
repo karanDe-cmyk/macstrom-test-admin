@@ -38,8 +38,9 @@ import {
 } from '@mui/icons-material'
 import { toast, ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+import axiosInstance from '../utils/axios'
 
-const API_BASE_URL = 'http://localhost:5000/api/bonus'
+// const API_BASE_URL = 'http://localhost:5000/api/bonus'
 
 export default function AdminBonusPanel() {
   const [bonuses, setBonuses] = useState([])
@@ -49,7 +50,7 @@ export default function AdminBonusPanel() {
   const [editingBonus, setEditingBonus] = useState(null)
   const [openEditDialog, setOpenEditDialog] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
-  
+
   // Pagination state
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
@@ -57,26 +58,28 @@ export default function AdminBonusPanel() {
   // Fetch all bonuses
   const fetchBonuses = async () => {
     try {
-      setLoading(true)
-      setError('')
-      const response = await fetch(`${API_BASE_URL}/all`)
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-      
-      const data = await response.json()
-      // Sort by member_id to maintain consistent order
-      const sortedData = data.sort((a, b) => a.member_id - b.member_id)
-      setBonuses(sortedData)
+      setLoading(true);
+      setError("");
+
+      // ✅ Use axiosInstance (baseURL already included)
+      const response = await axiosInstance.get("/all");
+
+      // Axios automatically throws for non-2xx responses, so no manual .ok check needed
+      const data = response.data || [];
+
+      // ✅ Sort bonuses by member_id
+      const sortedData = data.sort((a, b) => a.member_id - b.member_id);
+
+      setBonuses(sortedData);
     } catch (err) {
-      setError('Failed to fetch bonuses: ' + err.message)
-      toast.error('Failed to load bonuses!')
-      console.error('Fetch error:', err)
+      console.error("❌ Fetch bonuses error:", err);
+      setError("Failed to fetch bonuses: " + (err.response?.data?.message || err.message));
+      toast.error("Failed to load bonuses!");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
 
   // Load bonuses on component mount
   useEffect(() => {
@@ -105,58 +108,49 @@ export default function AdminBonusPanel() {
 
   const handleAddBonus = async () => {
     if (!formData.userId || !formData.amount) {
-      toast.error('Please fill in all fields!')
-      return
+      toast.error("Please fill in all fields!");
+      return;
     }
 
     try {
-      setActionLoading(true)
-      const response = await fetch(`${API_BASE_URL}/add`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: parseInt(formData.userId),
-          amount: parseFloat(formData.amount)
-        })
-      })
+      setActionLoading(true);
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
-      }
+      // ✅ Use axiosInstance
+      const { data: responseData } = await axiosInstance.post("/add", {
+        userId: parseInt(formData.userId),
+        amount: parseFloat(formData.amount),
+      });
 
-      const responseData = await response.json()
-      
       // Find if user already exists in the list
-      const existingUserIndex = bonuses.findIndex(bonus => bonus.member_id === parseInt(formData.userId))
-      
+      const existingUserIndex = bonuses.findIndex(
+        (bonus) => bonus.member_id === parseInt(formData.userId)
+      );
+
       if (existingUserIndex !== -1) {
-        // Update existing user in place
-        setBonuses(prevBonuses => {
-          const updatedBonuses = [...prevBonuses]
+        // ✅ Update existing user in state
+        setBonuses((prevBonuses) => {
+          const updatedBonuses = [...prevBonuses];
           updatedBonuses[existingUserIndex] = {
             ...updatedBonuses[existingUserIndex],
-            bonus_balance: parseFloat(formData.amount).toString()
-          }
-          return updatedBonuses
-        })
+            bonus_balance: parseFloat(formData.amount).toString(),
+          };
+          return updatedBonuses;
+        });
       } else {
-        // Add new user - fetch fresh data to get the complete user info
-        await fetchBonuses()
+        // ✅ Fetch fresh data if new user
+        await fetchBonuses();
       }
 
-      setFormData({ userId: '', amount: '' })
-      toast.success('Bonus added successfully! 🎉')
-      
+      setFormData({ userId: "", amount: "" });
+      toast.success("Bonus added successfully! 🎉");
     } catch (err) {
-      toast.error('Failed to add bonus: ' + err.message)
-      console.error('Add bonus error:', err)
+      console.error("Add bonus error:", err);
+      toast.error("Failed to add bonus: " + (err.response?.data?.message || err.message));
     } finally {
-      setActionLoading(false)
+      setActionLoading(false);
     }
-  }
+  };
+
 
   const handleEditClick = (bonus) => {
     setEditingBonus({
@@ -168,85 +162,69 @@ export default function AdminBonusPanel() {
   }
 
   const handleEditSave = async () => {
-    if (!editingBonus) return
+    if (!editingBonus) return;
 
     try {
-      setActionLoading(true)
-      const response = await fetch(`${API_BASE_URL}/update`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: editingBonus.userId,
-          amount: editingBonus.amount
-        })
-      })
+      setActionLoading(true);
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
-      }
+      // ✅ Use axiosInstance
+      await axiosInstance.put("/update", {
+        userId: editingBonus.userId,
+        amount: editingBonus.amount,
+      });
 
-      // Update the specific user in place without changing order
-      setBonuses(prevBonuses => 
-        prevBonuses.map(bonus => 
-          bonus.member_id === editingBonus.userId 
+      // ✅ Update state
+      setBonuses((prevBonuses) =>
+        prevBonuses.map((bonus) =>
+          bonus.member_id === editingBonus.userId
             ? { ...bonus, bonus_balance: editingBonus.amount.toString() }
             : bonus
         )
-      )
+      );
 
-      setOpenEditDialog(false)
-      setEditingBonus(null)
-      toast.success('Bonus updated successfully! ✅')
-      
+      setOpenEditDialog(false);
+      setEditingBonus(null);
+      toast.success("Bonus updated successfully! ✅");
     } catch (err) {
-      toast.error('Failed to update bonus: ' + err.message)
-      console.error('Update bonus error:', err)
+      console.error("Update bonus error:", err);
+      toast.error("Failed to update bonus: " + (err.response?.data?.message || err.message));
     } finally {
-      setActionLoading(false)
+      setActionLoading(false);
     }
-  }
+  };
+
 
   const handleDelete = async (memberId) => {
-    if (!window.confirm('Are you sure you want to delete this bonus?')) {
-      return
-    }
+    if (!window.confirm("Are you sure you want to delete this bonus?")) return;
 
     try {
-      setActionLoading(true)
-      const response = await fetch(`${API_BASE_URL}/delete/${memberId}`, {
-        method: 'DELETE'
-      })
+      setActionLoading(true);
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
-      }
+      // ✅ Use axiosInstance
+      await axiosInstance.delete(`/delete/${memberId}`);
 
-      // Remove the specific user from the current list without changing order of others
-      setBonuses(prevBonuses => {
-        const filteredBonuses = prevBonuses.filter(bonus => bonus.member_id !== memberId)
-        
+      // ✅ Update state
+      setBonuses((prevBonuses) => {
+        const filteredBonuses = prevBonuses.filter((bonus) => bonus.member_id !== memberId);
+
         // Adjust page if current page is now empty
-        const newTotalPages = Math.ceil(filteredBonuses.length / rowsPerPage)
+        const newTotalPages = Math.ceil(filteredBonuses.length / rowsPerPage);
         if (page >= newTotalPages && newTotalPages > 0) {
-          setPage(newTotalPages - 1)
+          setPage(newTotalPages - 1);
         }
-        
-        return filteredBonuses
-      })
 
-      toast.success('Bonus deleted successfully! 🗑')
-      
+        return filteredBonuses;
+      });
+
+      toast.success("Bonus deleted successfully! 🗑");
     } catch (err) {
-      toast.error('Failed to delete bonus: ' + err.message)
-      console.error('Delete bonus error:', err)
+      console.error("Delete bonus error:", err);
+      toast.error("Failed to delete bonus: " + (err.response?.data?.message || err.message));
     } finally {
-      setActionLoading(false)
+      setActionLoading(false);
     }
-  }
+  };
+
 
   const handleRefresh = () => {
     fetchBonuses()
@@ -429,38 +407,38 @@ export default function AdminBonusPanel() {
       {/* Bonuses Table */}
       <Card sx={{ overflowX: 'auto' }}>
         <CardContent sx={{ p: { xs: 1, sm: 2 } }}>
-        {/* Heading with Rows per page on the right */}
-        <Box 
-          sx={{ 
-            display: "flex", 
-            justifyContent: "space-between", 
-            alignItems: "center", 
-            mb: 2 
-          }}
-        >
-          <Typography variant="h6">
-            All Users and Their Bonuses ({bonuses.length} total)
-          </Typography>
+          {/* Heading with Rows per page on the right */}
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2
+            }}
+          >
+            <Typography variant="h6">
+              All Users and Their Bonuses ({bonuses.length} total)
+            </Typography>
 
-          {/* Rows Per Page Selector */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Typography variant="body2">Rows per page:</Typography>
-            <TextField
-              select
-              size="small"
-              value={rowsPerPage}
-              onChange={handleChangeRowsPerPage}
-              SelectProps={{ native: true }}
-              sx={{ width: 80 }}
-            >
-              {[5, 10, 25, 50, 100].map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </TextField>
+            {/* Rows Per Page Selector */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography variant="body2">Rows per page:</Typography>
+              <TextField
+                select
+                size="small"
+                value={rowsPerPage}
+                onChange={handleChangeRowsPerPage}
+                SelectProps={{ native: true }}
+                sx={{ width: 80 }}
+              >
+                {[5, 10, 25, 50, 100].map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </TextField>
+            </Box>
           </Box>
-        </Box>
 
           <Divider sx={{ mb: 2 }} />
           <TableContainer component={Paper} variant="outlined">
@@ -494,10 +472,10 @@ export default function AdminBonusPanel() {
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography 
-                        variant="body1" 
-                        sx={{ 
-                          fontWeight: 'bold', 
+                      <Typography
+                        variant="body1"
+                        sx={{
+                          fontWeight: 'bold',
                           color: parseFloat(bonus.bonus_balance) > 0 ? 'success.main' : 'text.secondary'
                         }}
                       >
@@ -536,7 +514,7 @@ export default function AdminBonusPanel() {
               </TableBody>
             </Table>
           </TableContainer>
-          
+
           {/* Pagination Component - Only page navigation, no rows per page selector */}
           <TablePagination
             rowsPerPageOptions={[]} // Empty array removes the rows per page dropdown
@@ -545,10 +523,10 @@ export default function AdminBonusPanel() {
             rowsPerPage={rowsPerPage}
             page={page}
             onPageChange={handleChangePage}
-            labelDisplayedRows={({ from, to, count }) => 
+            labelDisplayedRows={({ from, to, count }) =>
               `${from}–${to} of ${count !== -1 ? count : `more than ${to}`}`
             }
-            sx={{ 
+            sx={{
               mt: 2,
               '& .MuiTablePagination-toolbar': {
                 paddingLeft: { xs: 1, sm: 2 },
@@ -605,16 +583,16 @@ export default function AdminBonusPanel() {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button 
-            onClick={() => setOpenEditDialog(false)} 
+          <Button
+            onClick={() => setOpenEditDialog(false)}
             startIcon={<CancelIcon />}
             disabled={actionLoading}
           >
             Cancel
           </Button>
-          <Button 
-            onClick={handleEditSave} 
-            variant="contained" 
+          <Button
+            onClick={handleEditSave}
+            variant="contained"
             startIcon={actionLoading ? <CircularProgress size={20} /> : <SaveIcon />}
             disabled={actionLoading}
           >

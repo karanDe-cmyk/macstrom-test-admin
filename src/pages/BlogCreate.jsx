@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react"
 import { useNavigate, useParams, useLocation } from "react-router-dom"
 import { FaArrowLeft, FaUpload, FaSave, FaImage, FaEdit } from "react-icons/fa"
+import axiosInstance from "../utils/axios"
 
 // Axios wrapper for API calls (since axios is not available)
 const api = {
@@ -43,7 +44,7 @@ export default function CreateBlogPage() {
   const fetchBlogForEdit = async (blogId) => {
     setIsLoading(true)
     try {
-      const response = await api.get(`http://localhost:5000/api/blogs/${blogId}`)
+      const response = await axiosInstance.get(`/blogs/${blogId}`)
       const blog = response.data
       
       setFormData({
@@ -187,11 +188,11 @@ export default function CreateBlogPage() {
 
       if (isEditMode) {
         // Update existing blog
-        await api.put(`http://localhost:5000/api/blogs/${id}`, submitFormData)
+        await axiosInstance.put(`/blogs/${id}`, submitFormData)
         console.log("Blog updated successfully")
       } else {
         // Create new blog
-        await api.post('http://localhost:5000/api/blogs', submitFormData)
+        await axiosInstance.post('/blogs', submitFormData)
         console.log("Blog created successfully")
       }
 

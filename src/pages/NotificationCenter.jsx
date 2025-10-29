@@ -3,7 +3,8 @@ import { useState, useEffect } from "react"
 import { Download, Trash2, RefreshCw, Edit, Send, Clock, Calendar, Eye, EyeOff } from "lucide-react"
 import Modal from "../components/EditNotificationModal"
 import dayjs from "dayjs"
-import axios from "axios"
+// import axios from "axios"
+import axiosInstance from "../utils/axios"
 
 export default function NotificationCenter() {
   const pageSize = 5
@@ -43,7 +44,7 @@ export default function NotificationCenter() {
 
   const fetchNotifications = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/notifications")
+      const res = await axiosInstance.get("/notifications")
       const transformed = res.data.map((n) => ({
         id: n.id,
         title: n.title,
@@ -111,7 +112,7 @@ export default function NotificationCenter() {
       }
 
       console.log("Sending payload:", payload)
-      const response = await axios.post("http://localhost:5000/api/notifications", payload, {
+      const response = await axiosInstance.post("/notifications", payload, {
         headers: {
           "Content-Type": "application/json",
         },
@@ -188,7 +189,7 @@ export default function NotificationCenter() {
       // Delete notifications one by one using the API
       const deletePromises = selected.map(async (id) => {
         try {
-          await axios.delete(`http://localhost:5000/api/notifications/${id}`)
+          await axiosInstance.delete(`/notifications/${id}`)
           return { id, success: true }
         } catch (error) {
           console.error(`Failed to delete notification ${id}:`, error)

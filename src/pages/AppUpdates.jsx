@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Upload, Smartphone, Tag, Hash, RefreshCw, Edit3, Link } from "lucide-react";
-
+import axiosInstance from "../utils/axios";
 export default function ApkUploadForm() {
   const [formData, setFormData] = useState({
     apkFile: null,
@@ -8,7 +8,7 @@ export default function ApkUploadForm() {
     appVersion: '',
     apkUrl: ''
   });
-  
+
   const [dragActive, setDragActive] = useState(false);
   const [existingApps, setExistingApps] = useState([]);
   const [selectedAppId, setSelectedAppId] = useState('');
@@ -23,15 +23,10 @@ export default function ApkUploadForm() {
   const fetchExistingApps = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/app-updates');
-      if (response.ok) {
-        const data = await response.json();
-        setExistingApps(data.items || []);
-      } else {
-        console.error('Failed to fetch existing apps');
-      }
+      const response = await axiosInstance.get("/app-updates");
+      setExistingApps(response.data.items || []);
     } catch (error) {
-      console.error('Error fetching existing apps:', error);
+      console.error("Error fetching existing apps:", error);
     } finally {
       setLoading(false);
     }
@@ -88,7 +83,7 @@ export default function ApkUploadForm() {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0];
       if (file.name.endsWith('.apk')) {
@@ -101,52 +96,59 @@ export default function ApkUploadForm() {
   };
 
   const handleSubmit = async () => {
+    // Optional validation
     // if (!formData.apkFile || !formData.apkName || !formData.appVersion) {
-    //   alert('Please fill in all required fields.');
+    //   alert("Please fill in all required fields.");
     //   return;
     // }
 
     if (!isUpdating || !selectedAppId) {
-      alert('Please select an existing app to update.');
+      alert("Please select an existing app to update.");
       return;
     }
 
     setLoading(true);
-    
+
     try {
       const formDataToSend = new FormData();
-      formDataToSend.append('app_name', formData.apkName);
-      formDataToSend.append('app_version', formData.appVersion);
+      formDataToSend.append("app_name", formData.apkName);
+      formDataToSend.append("app_version", formData.appVersion);
+
       if (formData.apkUrl) {
-        formDataToSend.append('apk_url', formData.apkUrl);
+        formDataToSend.append("apk_url", formData.apkUrl);
       }
       if (formData.apkFile) {
-        formDataToSend.append('apk', formData.apkFile);
+        formDataToSend.append("apk", formData.apkFile);
       }
 
-      const response = await fetch(`http://localhost:5000/api/app-updates/${selectedAppId}`, {
-        method: 'PUT',
-        body: formDataToSend,
-      });
+      const response = await axiosInstance.put(
+        `/app-updates/${selectedAppId}`,
+        formDataToSend,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
-      if (response.ok) {
-        alert('App updated successfully!');
-        // Reset form and refresh the list
-        setFormData({ apkFile: null, apkName: '', appVersion: '', apkUrl: '' });
-        setSelectedAppId('');
-        setIsUpdating(false);
-        await fetchExistingApps();
-      } else {
-        const errorData = await response.json();
-        alert(`Update failed: ${errorData.message || 'Unknown error'}`);
-      }
+      alert("App updated successfully!");
+
+      // Reset form and refresh the list
+      setFormData({ apkFile: null, apkName: "", appVersion: "", apkUrl: "" });
+      setSelectedAppId("");
+      setIsUpdating(false);
+      await fetchExistingApps();
     } catch (error) {
-      console.error('Error updating app:', error);
-      alert('Network error occurred while updating the app.');
+      console.error("Error updating app:", error);
+
+      const message =
+        error.response?.data?.message || "Network error occurred while updating the app.";
+      alert(`Update failed: ${message}`);
     } finally {
       setLoading(false);
     }
   };
+
 
   const resetForm = () => {
     setFormData({ apkFile: null, apkName: '', appVersion: '', apkUrl: '' });
@@ -178,9 +180,9 @@ export default function ApkUploadForm() {
                 Refresh Apps
               </button>
             </div>
-            
+
             <div className="space-y-8">
-              
+
               {/* App Selection Dropdown */}
               <div className="space-y-3">
                 <label className="block text-lg font-semibold text-gray-900 flex items-center gap-3">
@@ -220,7 +222,7 @@ export default function ApkUploadForm() {
                   <p className="text-sm text-gray-500 mt-2">No existing apps found</p>
                 )}
               </div>
-              
+
               {/* APK File Upload */}
               <div className="space-y-3">
                 <label className="block text-lg font-semibold text-gray-900 flex items-center gap-3">
@@ -228,13 +230,12 @@ export default function ApkUploadForm() {
                   Upload APK File
                 </label>
                 <div
-                  className={`relative border-2 border-dashed rounded-2xl p-6 sm:p-8 lg:p-12 text-center transition-all duration-300 ${
-                    dragActive 
-                      ? 'border-blue-500 bg-blue-50 scale-105' 
-                      : formData.apkFile 
-                        ? 'border-green-500 bg-green-50' 
-                        : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
-                  }`}
+                  className={`relative border-2 border-dashed rounded-2xl p-6 sm:p-8 lg:p-12 text-center transition-all duration-300 ${dragActive
+                    ? 'border-blue-500 bg-blue-50 scale-105'
+                    : formData.apkFile
+                      ? 'border-green-500 bg-green-50'
+                      : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
+                    }`}
                   onDragEnter={handleDrag}
                   onDragLeave={handleDrag}
                   onDragOver={handleDrag}
@@ -351,11 +352,10 @@ export default function ApkUploadForm() {
                   type="button"
                   onClick={handleSubmit}
                   disabled={loading || !isUpdating}
-                  className={`w-50 font-bold py-4 px-8 rounded-2xl text-lg transition-all duration-200 transform hover:scale-[1.02] hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-100 active:scale-[0.98] ${
-                    loading || !isUpdating
-                      ? 'bg-gray-400 cursor-not-allowed text-white'
-                      : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'
-                  }`}
+                  className={`w-50 font-bold py-4 px-8 rounded-2xl text-lg transition-all duration-200 transform hover:scale-[1.02] hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-100 active:scale-[0.98] ${loading || !isUpdating
+                    ? 'bg-gray-400 cursor-not-allowed text-white'
+                    : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'
+                    }`}
                 >
                   {loading ? (
                     <span className="flex items-center justify-center gap-2">

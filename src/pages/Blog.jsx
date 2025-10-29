@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Edit, Trash2, Plus, Calendar, User, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import axiosInstance from '../utils/axios';
 
 // API wrapper
-const api = {
-  get: (url) => fetch(url).then(res => res.json()).then(data => ({ data })),
-  delete: (url) => fetch(url, { method: 'DELETE' }).then(res => res.json()).then(data => ({ data }))
-};
+// const api = {
+//   get: (url) => fetch(url).then(res => res.json()).then(data => ({ data })),
+//   delete: (url) => fetch(url, { method: 'DELETE' }).then(res => res.json()).then(data => ({ data }))
+// };
 
 const BlogApp = () => {
   const [blogs, setBlogs] = useState([]);
-  const [currentView, setCurrentView] = useState('list'); // 'list', 'view'
+  const [currentView, setCurrentView] = useState("list");
   const [selectedBlog, setSelectedBlog] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -19,10 +20,10 @@ const BlogApp = () => {
   const fetchBlogs = async () => {
     setLoading(true);
     try {
-      const response = await api.get('http://localhost:5000/api/blogs');
+      const response = await axiosInstance.get("/blogs");
       setBlogs(response.data);
     } catch (error) {
-      console.error('Error fetching blogs:', error);
+      console.error("Error fetching blogs:", error);
     } finally {
       setLoading(false);
     }
@@ -30,12 +31,12 @@ const BlogApp = () => {
 
   // Delete blog
   const deleteBlog = async (id) => {
-    if (window.confirm('Are you sure you want to delete this blog?')) {
+    if (window.confirm("Are you sure you want to delete this blog?")) {
       try {
-        await api.delete(`http://localhost:5000/api/blogs/${id}`);
-        setBlogs(blogs.filter(blog => blog.id !== id));
+        await axiosInstance.delete(`/blogs/${id}`);
+        setBlogs((prevBlogs) => prevBlogs.filter((blog) => blog.id !== id));
       } catch (error) {
-        console.error('Error deleting blog:', error);
+        console.error("Error deleting blog:", error);
       }
     }
   };
@@ -77,7 +78,7 @@ const BlogApp = () => {
         ) : (
           <h1 className="text-xl font-semibold">Blog Management</h1>
         )}
-        
+
         {currentView === 'list' && (
           <button
             onClick={() => navigate('/createblog')}
@@ -96,14 +97,14 @@ const BlogApp = () => {
     <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow border border-gray-100 overflow-hidden">
       {blog.thumbnail && (
         <div className="h-48 bg-gray-200 overflow-hidden">
-          <img 
-            src={blog.thumbnail} 
+          <img
+            src={blog.thumbnail}
             alt={blog.title}
             className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
           />
         </div>
       )}
-      
+
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4 text-sm text-gray-500">
@@ -120,7 +121,7 @@ const BlogApp = () => {
               <span>{calculateReadingTime(blog.content)} min read</span>
             </div>
           </div>
-          
+
           <div className="flex gap-2">
             <button
               onClick={() => navigate(`/createblog/edit/${blog.id}`)}
@@ -138,10 +139,10 @@ const BlogApp = () => {
             </button>
           </div>
         </div>
-        
+
         <h2 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2">{blog.title}</h2>
         <p className="text-gray-600 mb-4 line-clamp-3">{blog.heading}</p>
-        
+
         <button
           onClick={() => {
             setSelectedBlog(blog);
@@ -161,14 +162,14 @@ const BlogApp = () => {
       <div className="max-w-4xl mx-auto p-6">
         {selectedBlog.thumbnail && (
           <div className="mb-8 rounded-xl overflow-hidden">
-            <img 
-              src={selectedBlog.thumbnail} 
+            <img
+              src={selectedBlog.thumbnail}
               alt={selectedBlog.title}
               className="w-full h-64 object-cover"
             />
           </div>
         )}
-        
+
         <div className="mb-6">
           <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
             <div className="flex items-center gap-1">
@@ -187,16 +188,16 @@ const BlogApp = () => {
               {selectedBlog.content.split(' ').length} words
             </span>
           </div>
-          
+
           <h1 className="text-3xl font-bold text-gray-900 mb-4">{selectedBlog.title}</h1>
           <h2 className="text-xl text-gray-700 mb-2">{selectedBlog.heading}</h2>
           <h3 className="text-lg text-gray-600 mb-6">{selectedBlog.subheading}</h3>
         </div>
-        
+
         <div className="prose max-w-none">
           <div className="text-gray-800 leading-relaxed whitespace-pre-wrap">{selectedBlog.content}</div>
         </div>
-        
+
         <div className="mt-8 flex gap-4">
           <button
             onClick={() => navigate(`/createblog/edit/${selectedBlog.id}`)}
@@ -220,7 +221,7 @@ const BlogApp = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <main className="py-8">
         {currentView === 'list' && (
           <div className="max-w-7xl mx-auto px-6">
@@ -237,7 +238,7 @@ const BlogApp = () => {
             )}
           </div>
         )}
-        
+
         {currentView === 'view' && <BlogView />}
       </main>
     </div>

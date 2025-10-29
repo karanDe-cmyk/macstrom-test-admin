@@ -3,62 +3,70 @@
 import { useState, useEffect } from "react"
 import { Plus, Filter, Calendar, Users, DollarSign, Trophy, ArrowLeft, User, Edit2, Save, X } from "lucide-react"
 import { useNavigate } from "react-router-dom"
+import axiosInstance from "../utils/axios"
 
 // API configuration
-const API_BASE_URL = "http://localhost:5000/api"
-const AUTH_TOKEN = localStorage.getItem("authToken") || "your_default_token_here" // Replace with your actual token or logic to get it
+// const API_BASE_URL = "http://localhost:5000/api"
+// const AUTH_TOKEN = localStorage.getItem("authToken") || "your_default_token_here" // Replace with your actual token or logic to get it
 
-// API helper functions
-const apiRequest = async (url, options = {}) => {
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Authorization': `Bearer ${AUTH_TOKEN}`,
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    })
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-    
-    return await response.json()
-  } catch (error) {
-    console.error('API request failed:', error)
-    throw error
-  }
-}
+// // API helper functions
+// const apiRequest = async (url, options = {}) => {
+//   try {
+//     const response = await fetch(url, {
+//       ...options,
+//       headers: {
+//         'Authorization': `Bearer ${AUTH_TOKEN}`,
+//         'Content-Type': 'application/json',
+//         ...options.headers,
+//       },
+//     })
 
-const fetchContests = () => apiRequest(`${API_BASE_URL}/duo-contests`)
-const fetchTeams = (contestId) => apiRequest(`${API_BASE_URL}/duo-contests/${contestId}/teams`)
-const deletePlayer = (contestId, teamNumber, playerNumber) => 
-  apiRequest(`${API_BASE_URL}/duo-contests/${contestId}/join/${teamNumber}/${playerNumber}`, {
-    method: 'DELETE'
-  })
-const updateRoom = (contestId, roomData) => 
-  apiRequest(`${API_BASE_URL}/duo-contests/${contestId}/room`, {
-    method: 'PUT',
-    body: JSON.stringify(roomData)
-  })
+//     if (!response.ok) {
+//       throw new Error(`HTTP error! status: ${response.status}`)
+//     }
 
-  const deleteContest = (contestId) => 
-  apiRequest(`${API_BASE_URL}/duo-contests/delete/${contestId}`, {
-    method: 'DELETE',
-  })
+//     return await response.json()
+//   } catch (error) {
+//     console.error('API request failed:', error)
+//     throw error
+//   }
+// }
 
-// Utility functions
-const formatDate = (dateString) => {
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-IN', {
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true
-  })
-}
+// ✅ Fetch all duo contests
+export const fetchContests = async () => {
+  const { data } = await axiosInstance.get("/duo-contests");
+  return data;
+};
+
+// ✅ Fetch all teams in a specific contest
+export const fetchTeams = async (contestId) => {
+  const { data } = await axiosInstance.get(`/duo-contests/${contestId}/teams`);
+  return data;
+};
+
+// ✅ Delete player from a team
+export const deletePlayer = async (contestId, teamNumber, playerNumber) => {
+  const { data } = await axiosInstance.delete(
+    `/duo-contests/${contestId}/join/${teamNumber}/${playerNumber}`
+  );
+  return data;
+};
+
+// ✅ Update room details
+export const updateRoom = async (contestId, roomData) => {
+  const { data } = await axiosInstance.put(
+    `/duo-contests/${contestId}/room`,
+    roomData
+  );
+  return data;
+};
+
+// ✅ Delete contest
+export const deleteContest = async (contestId) => {
+  const { data } = await axiosInstance.delete(`/duo-contests/delete/${contestId}`);
+  return data;
+};
+
 
 const getStatusBadgeColor = (status) => {
   switch (status?.toLowerCase()) {
@@ -140,7 +148,7 @@ function ContestDetail({ contest, onBack }) {
     try {
       setDeletingPlayer(playerKey)
       await deletePlayer(contest.id, teamNumber, playerNumber)
-      
+
       // Update local teams state by removing the player
       setTeams(prevTeams => {
         const updatedTeams = { ...prevTeams }
@@ -184,12 +192,12 @@ function ContestDetail({ contest, onBack }) {
   const renderTeamSlot = (teamId, seatNumber, player) => {
     const playerKey = `${teamId}-${seatNumber}`
     const isDeleting = deletingPlayer === playerKey
-    
+
     if (player && player.game_username) {
       return (
         <div key={playerKey} className="border border-gray-300 rounded-md p-3 mb-2 flex items-center justify-between bg-green-50">
           <span className="text-sm text-gray-800 font-medium">{player.game_username}</span>
-          <button 
+          <button
             onClick={() => handleDeletePlayer(teamId, seatNumber)}
             disabled={isDeleting}
             className="text-red-600 hover:underline text-sm disabled:opacity-50"
@@ -199,7 +207,7 @@ function ContestDetail({ contest, onBack }) {
         </div>
       )
     }
-    
+
     return (
       <div key={playerKey} className="border border-dashed border-gray-300 rounded-md p-3 mb-2 flex items-center justify-between">
         <span className="text-sm text-gray-600">Seat {seatNumber} Empty</span>
@@ -311,7 +319,7 @@ function ContestDetail({ contest, onBack }) {
               </div>
             )}
           </div>
-          
+
           {!isEditingRoom ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
@@ -374,7 +382,7 @@ function ContestDetail({ contest, onBack }) {
           <h2 className="text-xl font-bold text-gray-900 mb-6">
             Teams ({totalTeams} Teams Available)
           </h2>
-          
+
           {loading ? (
             <div className="flex justify-center items-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -389,7 +397,7 @@ function ContestDetail({ contest, onBack }) {
               {Array.from({ length: totalTeams }).map((_, index) => {
                 const teamId = (index + 1).toString()
                 const teamData = teams[teamId] || [null, null]
-                
+
                 return (
                   <div key={teamId} className="border border-gray-200 rounded-lg p-4 text-center">
                     <h3 className="font-semibold text-gray-800 mb-3">Team {teamId}</h3>
@@ -402,20 +410,20 @@ function ContestDetail({ contest, onBack }) {
           )}
         </div>
         {/* Declare Result Button */}
-          <div className="flex justify-center mt-8">
-            <button
-              onClick={() => navigate(`/duo/result/${contest.id}`)}
-              className="flex items-center px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Declare Result
-              
-            </button>
-          </div>
+        <div className="flex justify-center mt-8">
+          <button
+            onClick={() => navigate(`/duo/result/${contest.id}`)}
+            className="flex items-center px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Declare Result
 
-        
+          </button>
+        </div>
+
+
 
       </div>
-      
+
     </div>
   )
 
@@ -436,7 +444,7 @@ export default function DuoContestsList() {
       try {
         setLoading(true)
         const contestsData = await fetchContests()
-        const transformedContests = contestsData.map(transformContestData).reverse() 
+        const transformedContests = contestsData.map(transformContestData).reverse()
         setContests(transformedContests)
         setError(null)
       } catch (err) {
@@ -450,20 +458,20 @@ export default function DuoContestsList() {
     loadContests()
   }, [])
 
-    const statusPriority = {
+  const statusPriority = {
     live: 1,
     upcoming: 2,
     completed: 3,
     cancelled: 4
   }
 
-  const filteredContests = filter === "All" 
-  ? [...contests].sort((a, b) => {
+  const filteredContests = filter === "All"
+    ? [...contests].sort((a, b) => {
       const aPriority = statusPriority[a.status?.toLowerCase()] || 99
       const bPriority = statusPriority[b.status?.toLowerCase()] || 99
       return aPriority - bPriority
     })
-  : contests.filter(
+    : contests.filter(
       (contest) => contest.status?.toLowerCase() === filter.toLowerCase()
     )
 
@@ -475,17 +483,17 @@ export default function DuoContestsList() {
     setSelectedContest(null)
   }
   const handleDeleteContest = async (contestId) => {
-  if (!window.confirm("Are you sure you want to delete this contest?")) return;
+    if (!window.confirm("Are you sure you want to delete this contest?")) return;
 
-  try {
-    await deleteContest(contestId);
-    setContests(prev => prev.filter(c => c.id !== contestId));
-    alert("Contest deleted successfully!");
-  } catch (err) {
-    console.error("Failed to delete contest:", err);
-    alert("Failed to delete contest. Please try again.");
-  }
-};
+    try {
+      await deleteContest(contestId);
+      setContests(prev => prev.filter(c => c.id !== contestId));
+      alert("Contest deleted successfully!");
+    } catch (err) {
+      console.error("Failed to delete contest:", err);
+      alert("Failed to delete contest. Please try again.");
+    }
+  };
   // const handleCreateContest = () => {
   //   alert('Navigate to create contest page')
   //   // In your actual app, use: navigate("/duo/create")
@@ -511,8 +519,8 @@ export default function DuoContestsList() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 mb-4">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Retry
@@ -532,13 +540,13 @@ export default function DuoContestsList() {
             <p className="text-gray-600">Join competitive Duo tournaments and win prizes</p>
           </div>
           <button
-                onClick={() => navigate("/duo/create")}
-                className="flex items-center px-6 py-3 bg-[#9333EA] text-white rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                <Plus className="w-5 h-5 mr-2" />
-                Create Contest
-            </button>
-        
+            onClick={() => navigate("/duo/create")}
+            className="flex items-center px-6 py-3 bg-[#9333EA] text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Create Contest
+          </button>
+
         </div>
 
         {/* Filter */}
@@ -549,9 +557,8 @@ export default function DuoContestsList() {
               <button
                 key={status}
                 onClick={() => setFilter(status)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  filter === status ? "bg-[#9333EA] text-white" : "bg-white text-gray-600 hover:bg-gray-50"
-                }`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === status ? "bg-[#9333EA] text-white" : "bg-white text-gray-600 hover:bg-gray-50"
+                  }`}
               >
                 {status}
               </button>
@@ -585,18 +592,18 @@ export default function DuoContestsList() {
                 </div>
                 <div className="p-6">
                   {/* <h3 className="text-xl font-bold text-gray-900 mb-2">{contest.title}</h3> */}
-                   <div className="flex items-center justify-between mb-2">
-        <h3 className="text-xl font-bold text-gray-900">{contest.title}</h3>
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            handleDeleteContest(contest.id)
-          }}
-          className="px-3 py-1 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-        >
-          Delete
-        </button>
-      </div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-xl font-bold text-gray-900">{contest.title}</h3>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteContest(contest.id)
+                      }}
+                      className="px-3 py-1 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      Delete
+                    </button>
+                  </div>
 
                   <p className="text-gray-600 text-sm mb-4 line-clamp-2">{contest.description}</p>
                   <div className="grid grid-cols-2 gap-4 mb-4">
@@ -626,8 +633,8 @@ export default function DuoContestsList() {
 
                     </div>
                   </div>
-                        
-                        
+
+
                 </div>
               </button>
             ))
@@ -641,6 +648,6 @@ export default function DuoContestsList() {
 
 
     </div>
-      
+
   )
 }

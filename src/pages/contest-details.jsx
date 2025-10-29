@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import RoomDetailsCard from "../components/RoomDetailsCard";
 import PlayersTable from "../components/PlayersTable";
 import PrizeDistributionTable from "../components/PrizeDistributionTable";
+import axiosInstance from "../utils/axios";
 
 function Stat({ icon, label, value }) {
   return (
@@ -51,95 +52,102 @@ export default function ContestDetail() {
       try {
         setLoading(true);
         setError(null);
+
         const token = localStorage.getItem("authToken");
-        // Fetch contest, prize, and room first
+
+        // ✅ Run all API calls in parallel using axiosInstance
         const [contestRes, prizeRes, roomRes] = await Promise.all([
-          fetch(
-            `http://localhost:5000/api/contest/${contestId}`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          ),
-          fetch(
-            `http://localhost:5000/api/prize/${contestId}`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          ),
-          fetch(
-            `http://localhost:5000/api/contest/admin/${contestId}/room`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          ),
+          axiosInstance.get(`/contest/${contestId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axiosInstance.get(`/prize/${contestId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axiosInstance.get(`/contest/admin/${contestId}/room`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
         ]);
-        if (!contestRes.ok) throw new Error("Failed to load contest");
-        const contestData = await contestRes.json();
+
+        // ✅ Set Contest Data
+        const contestData = contestRes.data;
         setContest(contestData);
-        if (prizeRes.ok) setPrizeDistribution(await prizeRes.json());
-        if (roomRes.ok) {
-          const room = await roomRes.json();
+
+        // ✅ Set Prize Distribution (if available)
+        if (prizeRes?.data) setPrizeDistribution(prizeRes.data);
+
+        // ✅ Set Room Info
+        if (roomRes?.data) {
+          const room = roomRes.data;
           setRoomForm({
             room_id: room.room_id || "",
             room_password: room.room_password || "",
             room_created_by: room.room_created_by || "",
           });
         }
-        // Only fetch solo players if contest is solo
+
+        // ✅ Fetch solo participants if contest is "solo"
         if (contestData?.team?.toLowerCase() === "solo") {
-          const soloRes = await fetch(
-            `http://localhost:5000/api/match/${contestId}/participants`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          if (!soloRes.ok) {
-            console.error('Failed to fetch solo players');
+          try {
+            const soloRes = await axiosInstance.get(`/match/${contestId}/participants`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            console.log("🎯 Solo players:", soloRes.data);
+          } catch (soloErr) {
+            console.error("⚠️ Failed to fetch solo players:", soloErr);
           }
         }
       } catch (err) {
-        setError(err.message || "Failed to load contest");
+        console.error("❌ Fetch contest error:", err);
+        setError(err.response?.data?.message || err.message || "Failed to load contest");
       } finally {
         setLoading(false);
       }
     };
+
     fetchContest();
   }, [contestId]);
+
 
   const handleSaveRoom = async (roomData) => {
     try {
       const token = localStorage.getItem("authToken");
-      await fetch(
-        `http://localhost:5000/api/contest/${contestId}/room`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(roomData),
-        }
-      );
+
+      await axiosInstance.put(`/contest/${contestId}/room`, roomData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
       setRoomForm(roomData);
     } catch (err) {
-      throw new Error(err.message || "Failed to update room details");
+      console.error("❌ Room update failed:", err);
+      throw new Error(
+        err.response?.data?.message || err.message || "Failed to update room details"
+      );
     }
   };
 
   const handleRemovePlayer = async (userId) => {
     try {
       const token = localStorage.getItem("authToken");
-      await fetch(
-        `http://localhost:5000/api/contest/${contestId}/remove-player/${userId}`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      
-      // Update the local state to remove the player
-      setContest(prevContest => ({
+
+      await axiosInstance.delete(`/contest/${contestId}/remove-player/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // ✅ Remove the player from local state
+      setContest((prevContest) => ({
         ...prevContest,
         joined_users: prevContest.joined_users.filter(
-          p => (p.userId || p.user_id || p.id) !== userId
-        )
+          (p) => (p.userId || p.user_id || p.id) !== userId
+        ),
       }));
     } catch (err) {
-      throw new Error(err.message || "Failed to remove player");
+      console.error("❌ Failed to remove player:", err);
+      throw new Error(
+        err.response?.data?.message || err.message || "Failed to remove player"
+      );
     }
   };
+
 
   if (loading)
     return <div className="p-8 text-center">Loading contest details...</div>;
@@ -234,9 +242,8 @@ export default function ContestDetail() {
                   </svg>
                 }
                 label="Players"
-                value={`${contest?.joined_count ?? 0}/${
-                  contest?.room_size ?? "—"
-                }`}
+                value={`${contest?.joined_count ?? 0}/${contest?.room_size ?? "—"
+                  }`}
               />
               <Stat
                 icon={
@@ -287,19 +294,19 @@ export default function ContestDetail() {
           </div>
         </div>
 
-        <RoomDetailsCard 
-        roomData={roomForm}
-        onSave={handleSaveRoom}
-      />
+        <RoomDetailsCard
+          roomData={roomForm}
+          onSave={handleSaveRoom}
+        />
 
-      <PlayersTable 
-        players={contest?.joined_users}
-        onRemovePlayer={handleRemovePlayer}
-      />
+        <PlayersTable
+          players={contest?.joined_users}
+          onRemovePlayer={handleRemovePlayer}
+        />
 
-      <PrizeDistributionTable
-        prizes={prizeDistribution}
-      />
+        <PrizeDistributionTable
+          prizes={prizeDistribution}
+        />
 
         {/* Actions */}
         <div className="mt-8 flex flex-col md:flex-row gap-4">

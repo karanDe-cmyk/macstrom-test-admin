@@ -2,6 +2,7 @@ import { Calendar, Trash2 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { formatDisplayDate } from "../utils/dateUtils";
+import axiosInstance from "../utils/axios";
 
 function ContestList() {
   const [contests, setContests] = useState([]);
@@ -17,27 +18,27 @@ function ContestList() {
         setLoading(true);
         setError(null);
         const token = localStorage.getItem("authToken");
-        const res = await fetch("http://localhost:5000/api/contest", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+
+        const { data } = await axiosInstance.get("/contest", {
+          headers: { Authorization: `Bearer ${token}` },
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || "Failed to load contests");
+
         setContests(data || []);
       } catch (err) {
-        setError(err.message || "Failed to load contests");
+        console.error("❌ Error fetching contests:", err);
+        setError(err.response?.data?.message || err.message || "Failed to load contests");
       } finally {
         setLoading(false);
       }
     };
+
     fetchContests();
   }, []);
 
   const handleDeleteContest = async (contestId, e) => {
-    e.preventDefault(); // Prevent navigation to contest details
-    e.stopPropagation(); // Stop event bubbling
-    
+    e.preventDefault();
+    e.stopPropagation();
+
     if (!window.confirm("Are you sure you want to delete this contest? This action cannot be undone.")) {
       return;
     }
@@ -45,30 +46,23 @@ function ContestList() {
     try {
       setDeletingContestId(contestId);
       const token = localStorage.getItem("authToken");
-      const res = await fetch(`http://localhost:5000/api/contest/${contestId}/delete`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+
+      await axiosInstance.delete(`/contest/${contestId}/delete`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || "Failed to delete contest");
-      }
+      // ✅ Remove deleted contest from UI immediately
+      setContests(prev => prev.filter(contest => contest.id !== contestId));
 
-      // Remove the deleted contest from the state
-      setContests(prevContests => prevContests.filter(contest => contest.id !== contestId));
-      
-      // Show success message (optional)
-      alert("Contest deleted successfully!");
-      
+      alert("✅ Contest deleted successfully!");
     } catch (err) {
-      alert(`Failed to delete contest: ${err.message}`);
+      console.error("❌ Delete contest error:", err);
+      alert(`Failed to delete contest: ${err.response?.data?.message || err.message}`);
     } finally {
       setDeletingContestId(null);
     }
   };
+
 
   const filteredContests = contests
     .filter(contest => {
@@ -117,11 +111,10 @@ function ContestList() {
               <button
                 key={status.value}
                 onClick={() => setFilter(status.value)}
-                className={`px-4 py-2 my-1 rounded-lg text-sm font-medium transition-colors ${
-                  filter === status.value
+                className={`px-4 py-2 my-1 rounded-lg text-sm font-medium transition-colors ${filter === status.value
                     ? "bg-purple-600 text-white"
                     : "bg-white text-gray-600 hover:bg-gray-50"
-                }`}
+                  }`}
               >
                 {status.label}
               </button>
@@ -158,7 +151,7 @@ function ContestList() {
                 // If same status, sort by schedule (nearest first for live/upcoming, latest first for others)
                 const dateA = new Date(a.match_schedule?.replace(/,/g, ''));
                 const dateB = new Date(b.match_schedule?.replace(/,/g, ''));
-                
+
                 // For live and upcoming, show nearest first
                 if (prioA <= 1) return dateA - dateB;
                 // For completed and others, show latest first
@@ -185,40 +178,39 @@ function ContestList() {
                       />
                       <div className="absolute top-4 left-4">
                         <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            contest.match_status === "live"
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${contest.match_status === "live"
                               ? "bg-green-100 text-green-800"
                               : contest.match_status === "completed"
-                              ? "bg-gray-100 text-gray-800"
-                              : contest.match_status === "cancelled"
-                              ? "bg-red-100 text-red-800"
-                              : "bg-blue-100 text-blue-800"
-                          }`}
+                                ? "bg-gray-100 text-gray-800"
+                                : contest.match_status === "cancelled"
+                                  ? "bg-red-100 text-red-800"
+                                  : "bg-blue-100 text-blue-800"
+                            }`}
                         >
                           {contest.match_status ? contest.match_status.charAt(0).toUpperCase() + contest.match_status.slice(1) : "Upcoming"}
                         </span>
                       </div>
                     </div>
                     <div className="p-6">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-xl font-bold text-gray-900">
-                        {contest.event_name}
-                      </h3>
-                      <button
-                        onClick={(e) => handleDeleteContest(contest.id, e)}
-                        disabled={deletingContestId === contest.id}
-                        className="px-3 py-1 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {deletingContestId === contest.id ? "Deleting..." : "Delete"}
-                      </button>
-                    </div>
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-xl font-bold text-gray-900">
+                          {contest.event_name}
+                        </h3>
+                        <button
+                          onClick={(e) => handleDeleteContest(contest.id, e)}
+                          disabled={deletingContestId === contest.id}
+                          className="px-3 py-1 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {deletingContestId === contest.id ? "Deleting..." : "Delete"}
+                        </button>
+                      </div>
                       <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                         {contest.match_description}
                       </p>
-                       <div className="flex items-center text-sm text-gray-600 mb-4">
-                          <Calendar className="w-4 h-4 mr-2 text-blue-500" />
-                          {formatDisplayDate(contest.match_schedule)}
-                        </div>
+                      <div className="flex items-center text-sm text-gray-600 mb-4">
+                        <Calendar className="w-4 h-4 mr-2 text-blue-500" />
+                        {formatDisplayDate(contest.match_schedule)}
+                      </div>
                       <div className="flex items-center justify-between">
                         <div className="text-sm text-gray-500">
                           {contest.game} {contest.map ? `• ${contest.map}` : ""}
@@ -229,7 +221,7 @@ function ContestList() {
                       </div>
                     </div>
                   </Link>
-                  
+
                   {/* Delete Button
                   <button
                     onClick={(e) => handleDeleteContest(contest.id, e)}

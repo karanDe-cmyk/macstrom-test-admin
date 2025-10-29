@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "../utils/axios";
 import { ToastContainer, toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from "react-router-dom";
@@ -21,10 +21,10 @@ function DailyDuels() {
   useEffect(() => {
     const fetchDuels = async () => {
       try {
-        const pendingRes = await axios.get("http://localhost:5000/api/duels?status=pending", {
+        const pendingRes = await axiosInstance.get("/duels?status=pending", {
           headers: { Authorization: `Bearer ${token}` }
         });
-        const verifiedRes = await axios.get("http://localhost:5000/api/duels?status=verified", {
+        const verifiedRes = await axiosInstance.get("/duels?status=verified", {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -112,7 +112,7 @@ const renderCard = (duel) => {
   const handleVerify = async () => {
     setLoading(true);
     try {
-      const res = await axios.put(`http://localhost:5000/api/duels/${duel.id}`, 
+      const res = await axiosInstance.put(`/duels/${duel.id}`, 
         { status: "verified" },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -138,7 +138,7 @@ const renderCard = (duel) => {
       {/* Banner */}
       {duel.banner && (
         <img
-          src={`http://localhost:5000/api/${duel.banner}`}
+          src={`/${duel.banner}`}
           alt="Duel Banner"
           className="w-full h-40 object-cover rounded mb-3"
         />
@@ -190,7 +190,7 @@ const renderCard = (duel) => {
           className="px-3 py-1 text-sm bg-red-500 text-white rounded"
           onClick={async () => {
             if (!window.confirm("Delete this duel?")) return;
-            await axios.delete(`http://localhost:5000/api/duels/${duel.id}`, {
+            await axiosInstance.delete(`/duels/${duel.id}`, {
               headers: { Authorization: `Bearer ${token}` }
             });
             toast.success("Duel deleted!");

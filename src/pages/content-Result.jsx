@@ -1,43 +1,44 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import Autocomplete from '@mui/material/Autocomplete';
 import {
-  Card,
-  CardHeader,
-  CardContent,
-  Button,
-  TextField,
-  Chip,
-  Alert,
-  CircularProgress,
-  Box,
-  Typography,
-  Avatar,
-  Divider,
-  Grid,
-  Paper,
-  InputAdornment,
-  IconButton,
-  MenuItem,
-  Select,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions
+    Card,
+    CardHeader,
+    CardContent,
+    Button,
+    TextField,
+    Chip,
+    Alert,
+    CircularProgress,
+    Box,
+    Typography,
+    Avatar,
+    Divider,
+    Grid,
+    Paper,
+    InputAdornment,
+    IconButton,
+    MenuItem,
+    Select,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    DialogActions
 } from "@mui/material";
 import {
-  EmojiEvents as TrophyIcon,
-  People as PeopleIcon,
-  CalendarToday as CalendarIcon,
-  Place as MapPinIcon,
-  SportsEsports as GamepadIcon,
-  MilitaryTech as CrownIcon,
-  CheckCircle as CheckCircleIcon,
-  Error as ErrorIcon,
-  ArrowBack as ArrowBackIcon,
-  Search as SearchIcon
+    EmojiEvents as TrophyIcon,
+    People as PeopleIcon,
+    CalendarToday as CalendarIcon,
+    Place as MapPinIcon,
+    SportsEsports as GamepadIcon,
+    MilitaryTech as CrownIcon,
+    CheckCircle as CheckCircleIcon,
+    Error as ErrorIcon,
+    ArrowBack as ArrowBackIcon,
+    Search as SearchIcon
 } from "@mui/icons-material";
 import { useParams, useNavigate } from "react-router-dom";
+import axiosInstance from "../utils/axios";
 
 export default function ContestResultDeclaration() {
     const [contest, setContest] = useState(null);
@@ -65,49 +66,40 @@ export default function ContestResultDeclaration() {
     const fetchContestAndResults = useCallback(async () => {
         setIsLoading(true);
         try {
-            // Fetch general contest details
-            const contestRes = await fetch(`http://localhost:5000/api/contest/${contestId}`, {
+            // ✅ 1. Fetch general contest details
+            const { data: contestData } = await axiosInstance.get(`/contest/${contestId}`, {
                 headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
+                    Authorization: `Bearer ${token}`,
+                },
             });
-
-            if (!contestRes.ok) {
-                throw new Error('Failed to fetch contest details');
-            }
-            const contestData = await contestRes.json();
             setContest(contestData);
 
-            // Fetch prize distribution template from the new API endpoint
-            const templateRes = await fetch(`http://localhost:5000/api/contest/declare/${contestId}/result-template`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+            // ✅ 2. Fetch prize distribution (result template)
+            const { data: templateData } = await axiosInstance.get(
+                `/contest/declare/${contestId}/result-template`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
                 }
-            });
-
-            if (!templateRes.ok) {
-                throw new Error('Failed to fetch result template');
-            }
-            const templateData = await templateRes.json();
+            );
             setWinners(templateData.result_template);
 
-            // Check if results are already declared based on the template data
-            const resultsAreDeclared = templateData.result_template.some(w => w.userId !== null);
-            setIsDeclared(resultsAreDeclared);
-
-        } catch (err) {
-            setError(err.message || "Failed to fetch contest details");
-            showToast(
-                "Error",
-                err.message,
-                "destructive"
+            // ✅ 3. Determine if results are declared
+            const resultsAreDeclared = templateData.result_template.some(
+                (w) => w.userId !== null
             );
+            setIsDeclared(resultsAreDeclared);
+        } catch (err) {
+            console.error("❌ Fetch contest error:", err);
+            setError(err.response?.data?.message || err.message || "Failed to fetch contest details");
+
+            showToast("Error", err.response?.data?.message || err.message, "destructive");
         } finally {
             setIsLoading(false);
         }
     }, [contestId, token]);
+
 
     const updateWinner = (rank, field, value) => {
         setWinners(prev =>
@@ -188,45 +180,39 @@ export default function ContestResultDeclaration() {
         setError(null);
 
         try {
-            const filledWinners = winners.filter(w => w.userId && w.name.trim());
+            const filledWinners = winners.filter((w) => w.userId && w.name.trim());
 
-            const res = await fetch(`http://localhost:5000/api/contest/declare/${contestId}/declare-result`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    winners: filledWinners.map(w => ({
+            // ✅ Use axiosInstance
+            await axiosInstance.post(
+                `/contest/declare/${contestId}/declare-result`,
+                {
+                    winners: filledWinners.map((w) => ({
                         rank: w.rank,
                         userId: w.userId,
                         name: w.name,
-                        winning_amount: w.winning_amount
-                    }))
-                })
-            });
-
-            if (!res.ok) {
-                throw new Error('Failed to declare results');
-            }
+                        winning_amount: w.winning_amount,
+                    })),
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
 
             setIsDeclared(true);
             setError(null);
-            showToast(
-                "Success",
-                "Results declared successfully!"
-            );
+
+            showToast("Success", "Results declared successfully!");
         } catch (err) {
-            setError(err.message || "Failed to declare results");
-            showToast(
-                "Error",
-                err.message,
-                "destructive"
-            );
+            console.error("❌ Declare results error:", err);
+            setError(err.response?.data?.message || err.message || "Failed to declare results");
+            showToast("Error", err.response?.data?.message || err.message, "destructive");
         } finally {
             setIsLoading(false);
         }
     };
+
 
     const formatDate = (dateString) => {
         try {
@@ -254,7 +240,7 @@ export default function ContestResultDeclaration() {
 
     if (isLoading && !contest) {
         return (
-            <Box sx={{ 
+            <Box sx={{
                 minHeight: '100vh',
                 background: 'linear-gradient(to bottom right, #f0f4ff, #f9f0ff)',
                 display: 'flex',
@@ -274,7 +260,7 @@ export default function ContestResultDeclaration() {
 
     if (!contest) {
         return (
-            <Box sx={{ 
+            <Box sx={{
                 minHeight: '100vh',
                 background: 'linear-gradient(to bottom right, #f0f4ff, #f9f0ff)',
                 display: 'flex',
@@ -290,8 +276,8 @@ export default function ContestResultDeclaration() {
                     <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
                         The requested contest could not be loaded.
                     </Typography>
-                    <Button 
-                        variant="contained" 
+                    <Button
+                        variant="contained"
                         startIcon={<ArrowBackIcon />}
                         onClick={() => navigate(-1)}
                     >
@@ -303,7 +289,7 @@ export default function ContestResultDeclaration() {
     }
 
     return (
-        <Box sx={{ 
+        <Box sx={{
             minHeight: '100vh',
             background: 'linear-gradient(to bottom right, #f0f4ff, #f9f0ff)',
             py: 4
@@ -321,14 +307,14 @@ export default function ContestResultDeclaration() {
                     </Button>
                 </Box>
 
-                <Card sx={{ 
+                <Card sx={{
                     background: 'linear-gradient(to right, #4f46e5, #7c3aed)',
                     color: 'white',
                     mb: 3
                 }}>
                     <CardContent sx={{ p: 4 }}>
-                        <Box sx={{ 
-                            display: 'flex', 
+                        <Box sx={{
+                            display: 'flex',
                             flexDirection: { xs: 'column', md: 'row' },
                             alignItems: { md: 'center' },
                             justifyContent: 'space-between',
@@ -336,18 +322,18 @@ export default function ContestResultDeclaration() {
                         }}>
                             <Box sx={{ flex: 1 }}>
                                 <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                                    <Chip 
-                                        label={`Contest #${contest.id}`} 
-                                        size="small" 
-                                        sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white' }} 
+                                    <Chip
+                                        label={`Contest #${contest.id}`}
+                                        size="small"
+                                        sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white' }}
                                     />
-                                    <Chip 
-                                        label={contest.match_status.toUpperCase()} 
-                                        size="small" 
-                                        sx={{ 
+                                    <Chip
+                                        label={contest.match_status.toUpperCase()}
+                                        size="small"
+                                        sx={{
                                             bgcolor: contest.match_status === "live" ? 'error.main' : 'success.main',
                                             color: 'white'
-                                        }} 
+                                        }}
                                     />
                                 </Box>
                                 <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', mb: 1 }}>
@@ -387,7 +373,7 @@ export default function ContestResultDeclaration() {
                 </Card>
 
                 {isDeclared && (
-                    <Alert 
+                    <Alert
                         severity="success"
                         sx={{ mb: 3 }}
                         icon={<CheckCircleIcon fontSize="inherit" />}
@@ -397,7 +383,7 @@ export default function ContestResultDeclaration() {
                 )}
 
                 {error && (
-                    <Alert 
+                    <Alert
                         severity="error"
                         sx={{ mb: 3 }}
                         icon={<ErrorIcon fontSize="inherit" />}
@@ -430,10 +416,10 @@ export default function ContestResultDeclaration() {
                                 );
                                 const selectedUser = joinedUsers.find(u => u.userId === winner.userId) || null;
                                 return (
-                                    <Paper 
-                                        key={winner.rank} 
+                                    <Paper
+                                        key={winner.rank}
                                         elevation={2}
-                                        sx={{ 
+                                        sx={{
                                             p: 3,
                                             display: 'flex',
                                             alignItems: 'center',
@@ -441,9 +427,9 @@ export default function ContestResultDeclaration() {
                                             position: 'relative'
                                         }}
                                     >
-                                        <Box sx={{ 
-                                            display: 'flex', 
-                                            alignItems: 'center', 
+                                        <Box sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
                                             gap: 2,
                                             minWidth: 120
                                         }}>
@@ -464,14 +450,14 @@ export default function ContestResultDeclaration() {
                                             >
                                                 {winner.rank}
                                             </Avatar>
-                                            <Chip 
-                                                label={`Rank ${winner.rank}`} 
+                                            <Chip
+                                                label={`Rank ${winner.rank}`}
                                                 color={
-                                                    winner.rank <= 3 
-                                                        ? winner.rank === 1 
-                                                            ? 'warning' 
-                                                            : winner.rank === 2 
-                                                                ? 'default' 
+                                                    winner.rank <= 3
+                                                        ? winner.rank === 1
+                                                            ? 'warning'
+                                                            : winner.rank === 2
+                                                                ? 'default'
                                                                 : 'primary'
                                                         : 'secondary'
                                                 }

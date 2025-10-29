@@ -1,7 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { RefreshCw, Plus, Trash2, Power, PowerOff, AlertCircle } from 'lucide-react';
+import axiosInstance from '../utils/axios';
 
-const API_BASE_URL = 'http://localhost:5000/api/payment-gateway-status';
+// const API_BASE_URL = 'http://localhost:5000/api/payment-gateway-status';
+// ✅ Fetch all gateways
+export const fetchGatewaysApi = async () => {
+  const { data } = await axiosInstance.get("/get-status");
+  return data;
+};
+
+// ✅ Toggle gateway status
+export const toggleGatewayStatusApi = async (gatewayName, status) => {
+  const { data } = await axiosInstance.post("/set-status", {
+    gatewayName,
+    status,
+  });
+  return data;
+};
+
+// ✅ Delete a gateway
+export const deleteGatewayApi = async (gatewayName) => {
+  const { data } = await axiosInstance.delete("/delete", {
+    data: { gatewayName },
+  });
+  return data;
+};
+
+// ✅ Add a new gateway
+export const addGatewayApi = async (newGateway) => {
+  const { data } = await axiosInstance.post("/set-status", newGateway);
+  return data;
+};
+
 
 export default function PaymentGatewayManager() {
   const [gateways, setGateways] = useState([]);
@@ -17,122 +47,74 @@ export default function PaymentGatewayManager() {
 
   const fetchGateways = async () => {
     setLoading(true);
-    setError('');
+    setError("");
     try {
-      const response = await fetch(`${API_BASE_URL}/get-status`, {
-        headers: {
-          'Authorization': `Bearer ${getToken()}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      const data = await response.json();
+      const data = await fetchGatewaysApi();
       if (data.success) {
         setGateways(data.gateways);
       } else {
-        setError('Failed to fetch gateways');
+        setError("Failed to fetch gateways");
       }
     } catch (err) {
-      setError('Error fetching gateways: ' + err.message);
+      setError("Error fetching gateways: " + err.message);
     } finally {
       setLoading(false);
     }
   };
 
   const toggleStatus = async (gatewayName, currentStatus) => {
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
     try {
-      const response = await fetch(`${API_BASE_URL}/set-status`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${getToken()}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          gatewayName,
-          status: !currentStatus
-        })
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setSuccess(`${gatewayName} status updated successfully`);
-        fetchGateways();
-        setTimeout(() => setSuccess(''), 3000);
-      } else {
-        setError(data.message || 'Failed to update status');
-      }
+      await toggleGatewayStatusApi(gatewayName, !currentStatus);
+      setSuccess(`${gatewayName} status updated successfully`);
+      await fetchGateways();
+      setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
-      setError('Error updating status: ' + err.message);
+      setError("Error updating status: " + err.message);
     }
   };
 
   const deleteGateway = async (gatewayName) => {
-    if (!confirm(`Are you sure you want to delete ${gatewayName}?`)) return;
-    
-    setError('');
-    setSuccess('');
+    if (!window.confirm(`Are you sure you want to delete ${gatewayName}?`)) return;
+
+    setError("");
+    setSuccess("");
     try {
-      const response = await fetch(`${API_BASE_URL}/delete`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${getToken()}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ gatewayName })
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setSuccess(`${gatewayName} deleted successfully`);
-        fetchGateways();
-        setTimeout(() => setSuccess(''), 3000);
-      } else {
-        setError(data.message || 'Failed to delete gateway');
-      }
+      await deleteGatewayApi(gatewayName);
+      setSuccess(`${gatewayName} deleted successfully`);
+      await fetchGateways();
+      setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
-      setError('Error deleting gateway: ' + err.message);
+      setError("Error deleting gateway: " + err.message);
     }
   };
 
-  const addGateway = () => {
-    setError('');
-    setSuccess('');
-    
+  const addGateway = async () => {
+    setError("");
+    setSuccess("");
+
     if (!newGateway.gatewayName.trim()) {
-      setError('Gateway name is required');
+      setError("Gateway name is required");
       return;
     }
 
-    const submitData = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/set-status`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${getToken()}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(newGateway)
-        });
-        const data = await response.json();
-        if (response.ok) {
-          setSuccess('Gateway added successfully');
-          setNewGateway({ gatewayName: '', status: true });
-          setShowAddForm(false);
-          fetchGateways();
-          setTimeout(() => setSuccess(''), 3000);
-        } else {
-          setError(data.message || 'Failed to add gateway');
-        }
-      } catch (err) {
-        setError('Error adding gateway: ' + err.message);
-      }
-    };
-    
-    submitData();
+    try {
+      await addGatewayApi(newGateway);
+      setSuccess("Gateway added successfully");
+      setNewGateway({ gatewayName: "", status: true });
+      setShowAddForm(false);
+      await fetchGateways();
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err) {
+      setError("Error adding gateway: " + err.message);
+    }
   };
 
   useEffect(() => {
     fetchGateways();
   }, []);
+
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleString('en-US', {
@@ -256,11 +238,10 @@ export default function PaymentGatewayManager() {
 
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-blue-700">Status:</span>
-                  <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                    gateway.status
+                  <span className={`px-3 py-1 rounded-full text-sm font-semibold ${gateway.status
                       ? 'bg-green-100 text-green-700'
                       : 'bg-red-100 text-red-700'
-                  }`}>
+                    }`}>
                     {gateway.status ? 'Active' : 'Inactive'}
                   </span>
                 </div>
@@ -268,11 +249,10 @@ export default function PaymentGatewayManager() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => toggleStatus(gateway.gatewayName, gateway.status)}
-                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                      gateway.status
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${gateway.status
                         ? 'bg-blue-400 hover:bg-blue-500 text-white'
                         : 'bg-blue-600 hover:bg-blue-700 text-white'
-                    }`}
+                      }`}
                   >
                     {gateway.status ? (
                       <>
