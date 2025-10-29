@@ -66,7 +66,7 @@ export default function ContestResultDeclaration() {
         setIsLoading(true);
         try {
             // Fetch general contest details
-            const contestRes = await fetch(`https://macstrombattle-api.kglame.com/api/contest/${contestId}`, {
+            const contestRes = await fetch(`http://localhost:5000/api/contest/${contestId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -80,7 +80,7 @@ export default function ContestResultDeclaration() {
             setContest(contestData);
 
             // Fetch prize distribution template from the new API endpoint
-            const templateRes = await fetch(`https://macstrombattle-api.kglame.com/api/contest/declare/${contestId}/result-template`, {
+            const templateRes = await fetch(`http://localhost:5000/api/contest/declare/${contestId}/result-template`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -190,7 +190,7 @@ export default function ContestResultDeclaration() {
         try {
             const filledWinners = winners.filter(w => w.userId && w.name.trim());
 
-            const res = await fetch(`https://macstrombattle-api.kglame.com/api/contest/declare/${contestId}/declare-result`, {
+            const res = await fetch(`http://localhost:5000/api/contest/declare/${contestId}/declare-result`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,

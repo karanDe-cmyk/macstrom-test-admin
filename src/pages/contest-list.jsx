@@ -17,7 +17,7 @@ function ContestList() {
         setLoading(true);
         setError(null);
         const token = localStorage.getItem("authToken");
-        const res = await fetch("https://macstrombattle-api.kglame.com/api/contest", {
+        const res = await fetch("http://localhost:5000/api/contest", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -45,7 +45,7 @@ function ContestList() {
     try {
       setDeletingContestId(contestId);
       const token = localStorage.getItem("authToken");
-      const res = await fetch(`https://macstrombattle-api.kglame.com/api/contest/${contestId}/delete`, {
+      const res = await fetch(`http://localhost:5000/api/contest/${contestId}/delete`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

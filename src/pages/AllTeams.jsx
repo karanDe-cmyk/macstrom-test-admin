@@ -10,7 +10,7 @@ const TeamManagement = () => {
   const [editingTeam, setEditingTeam] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(null);
 
-  const API_BASE = 'https://macstrombattle-api.kglame.com/api/admin/teams';
+  const API_BASE = 'http://localhost:5000/api/admin/teams';
 
   // Custom axios-like HTTP client
   const httpClient = {

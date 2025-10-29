@@ -17,7 +17,7 @@ import {
 } from "lucide-react"
 import axiosInstance from "../utils/axios"
 
-const API_URL = "https://macstrombattle-api.kglame.com/api/tournament"
+const API_URL = "http://localhost:5000/api/tournament"
 
 export default function GroupManagement() {
   const [userData, setUserData] = useState([])

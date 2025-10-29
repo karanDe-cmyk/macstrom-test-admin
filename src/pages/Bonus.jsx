@@ -39,7 +39,7 @@ import {
 import { toast, ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 
-const API_BASE_URL = 'https://macstrombattle-api.kglame.com/api/bonus'
+const API_BASE_URL = 'http://localhost:5000/api/bonus'
 
 export default function AdminBonusPanel() {
   const [bonuses, setBonuses] = useState([])

@@ -36,7 +36,7 @@ import {
 } from "@mui/icons-material";
 import { motion, AnimatePresence } from "framer-motion";
 
-const API_URL = "https://macstrombattle-api.kglame.com/api/subscriptions/purchased";
+const API_URL = "http://localhost:5000/api/subscriptions/purchased";
 
 const statusConfig = {
   active: { color: "success", icon: <CheckCircle fontSize="small" />, label: "Active" },

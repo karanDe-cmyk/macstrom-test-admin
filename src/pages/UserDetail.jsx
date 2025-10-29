@@ -44,7 +44,7 @@ export default function UserDetail({ user, onBack, onKycStatusChange, authToken 
     const fetchKycData = async () => {
       setLoadingKyc(true)
       try {
-        const response = await fetch(`https://macstrombattle-api.kglame.com/api/userkyc/user/${userId}`, {
+        const response = await fetch(`http://localhost:5000/api/userkyc/user/${userId}`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -76,7 +76,7 @@ export default function UserDetail({ user, onBack, onKycStatusChange, authToken 
   const fetchPaymentData = async () => {
     setLoadingPayments(true)
     try {
-      const depositResponse = await fetch(`https://macstrombattle-api.kglame.com/api/user/deposit/${userId}`, {
+      const depositResponse = await fetch(`http://localhost:5000/api/user/deposit/${userId}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -85,7 +85,7 @@ export default function UserDetail({ user, onBack, onKycStatusChange, authToken 
       })
 
       const withdrawalResponse = await fetch(
-        `https://macstrombattle-api.kglame.com/api/user/withdraw/${userId}`,
+        `http://localhost:5000/api/user/withdraw/${userId}`,
         {
           method: "GET",
           headers: {
@@ -137,7 +137,7 @@ export default function UserDetail({ user, onBack, onKycStatusChange, authToken 
     setLoadingTransactions(true)
     try {
       const response = await fetch(
-        `https://macstrombattle-api.kglame.com/api/match/match-transaction-logs/user/${userId}`,
+        `http://localhost:5000/api/match/match-transaction-logs/user/${userId}`,
         {
           method: "GET",
           headers: {

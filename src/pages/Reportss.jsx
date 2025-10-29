@@ -180,9 +180,9 @@ export default function UserReportsCenter() {
 
   // API Base URLs
   const API_BASE_URL =
-    "https://macstrombattle-api.kglame.com/api/reports";
+    "http://localhost:5000/api/reports";
   const ADMIN_API_URL =
-    "https://macstrombattle-api.kglame.com/api/auth/admin/getadmins"; // Admin API URL
+    "http://localhost:5000/api/auth/admin/getadmins"; // Admin API URL
   const ADMIN_AUTH_TOKEN = localStorage.getItem("authToken"); // Get auth token from local storage
   // Calculate category counts from reports
   const calculateCategoryCounts = (reports) => {

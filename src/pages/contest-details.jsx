@@ -55,15 +55,15 @@ export default function ContestDetail() {
         // Fetch contest, prize, and room first
         const [contestRes, prizeRes, roomRes] = await Promise.all([
           fetch(
-            `https://macstrombattle-api.kglame.com/api/contest/${contestId}`,
+            `http://localhost:5000/api/contest/${contestId}`,
             { headers: { Authorization: `Bearer ${token}` } }
           ),
           fetch(
-            `https://macstrombattle-api.kglame.com/api/prize/${contestId}`,
+            `http://localhost:5000/api/prize/${contestId}`,
             { headers: { Authorization: `Bearer ${token}` } }
           ),
           fetch(
-            `https://macstrombattle-api.kglame.com/api/contest/admin/${contestId}/room`,
+            `http://localhost:5000/api/contest/admin/${contestId}/room`,
             { headers: { Authorization: `Bearer ${token}` } }
           ),
         ]);
@@ -82,7 +82,7 @@ export default function ContestDetail() {
         // Only fetch solo players if contest is solo
         if (contestData?.team?.toLowerCase() === "solo") {
           const soloRes = await fetch(
-            `https://macstrombattle-api.kglame.com/api/match/${contestId}/participants`,
+            `http://localhost:5000/api/match/${contestId}/participants`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           if (!soloRes.ok) {
@@ -102,7 +102,7 @@ export default function ContestDetail() {
     try {
       const token = localStorage.getItem("authToken");
       await fetch(
-        `https://macstrombattle-api.kglame.com/api/contest/${contestId}/room`,
+        `http://localhost:5000/api/contest/${contestId}/room`,
         {
           method: "PUT",
           headers: {
@@ -122,7 +122,7 @@ export default function ContestDetail() {
     try {
       const token = localStorage.getItem("authToken");
       await fetch(
-        `https://macstrombattle-api.kglame.com/api/contest/${contestId}/remove-player/${userId}`,
+        `http://localhost:5000/api/contest/${contestId}/remove-player/${userId}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
