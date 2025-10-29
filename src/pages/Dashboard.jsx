@@ -1083,164 +1083,68 @@ const Dashboard = () => {
                   </p>
                 </div>
 
-                {/* ✅ Centered Total Tournaments */}
-                <div
-                  className={`text-center p-4 rounded-xl col-span-2 mx-auto w-1/2 ${
-                    darkMode ? "bg-gray-700" : "bg-gray-50"
-                  }`}
-                >
-                  <p
-                    className={`text-sm ${
-                      darkMode ? "text-gray-400" : "text-gray-600"
-                    }`}
-                  >
-                    Total Tournaments
-                  </p>
-                  <p
-                    className={`text-lg font-semibold ${
-                      darkMode ? "text-gray-100" : "text-gray-900"
-                    }`}
-                  >
-                    {teams.length}
-                  </p>
-                </div>
-              </div>
-                    
-            </div>
-                
-          </div>
-                   
-          <div
-            className={`backdrop-blur-sm rounded-2xl shadow-lg border p-6 ${
-              darkMode
-                ? "bg-gray-800/70 border-gray-700/20"
-                : "bg-white/70 border-white/20"
-            }`}
-          >
-             
-            <div className="flex items-center justify-between mb-6">
-                 
-              <div>
-                
-                <h3
-                  className={`text-xl font-bold ${
-                    darkMode ? "text-gray-100" : "text-gray-900"
-                  }`}
-                >
-                  Reports Analytics
-                </h3>
-                
-                <p
-                  className={`text-sm mt-1 ${
-                    darkMode ? "text-gray-400" : "text-gray-600"
-                  }`}
-                >
-                  Generated reports and insights
-                </p>
-                   
-              </div>
-                  <FileText className="w-6 h-6 text-amber-600" /> 
-            </div>
-             
-            <div className="space-y-6">
-                  {/* Total Reports */}   
-              <div
-                className={`flex items-center justify-between p-4 rounded-xl ${
-                  darkMode
-                    ? "bg-gradient-to-r from-amber-900/50 to-amber-800/50"
-                    : "bg-gradient-to-r from-amber-50 to-amber-100"
-                }`}
-              >
-                
-                <div>
-                    
-                  <p className="text-amber-700 font-medium">Total Reports</p>   
-                     
-                  <p
-                    className={`text-2xl font-bold ${
-                      darkMode ? "text-amber-400" : "text-amber-900"
-                    }`}
-                  >
-                              {formatNumber(reports.length)}  
-                  </p>
-                  
-                </div>
-                
-                <div className="text-amber-600">
-                          <BarChart3 className="w-8 h-8" />
-                </div>
-                   
-              </div>
-                  {/* This Week & This Month */}   
-              <div className="grid grid-cols-2 gap-4">
-                
-                <div
-                  className={`text-center p-4 rounded-xl ${
-                    darkMode ? "bg-gray-700" : "bg-gray-50"
-                  }`}
-                >
-                    
-                  <p
-                    className={`text-sm ${
-                      darkMode ? "text-gray-400" : "text-gray-600"
-                    }`}
-                  >
-                    This Week
-                  </p>
-                    
-                  <p
-                    className={`text-lg font-semibold ${
-                      darkMode ? "text-gray-100" : "text-gray-900"
-                    }`}
-                  >
-                        
-                    {
-                      reports.filter(
-                        (r) =>
-                          r.createdAt &&
-                          new Date(r.createdAt) > subDays(new Date(), 7)
-                      ).length
-                    }
-                      
-                  </p>
-                  
-                </div>
-                
-                <div
-                  className={`text-center p-4 rounded-xl ${
-                    darkMode ? "bg-gray-700" : "bg-gray-50"
-                  }`}
-                >
-                    
-                  <p
-                    className={`text-sm ${
-                      darkMode ? "text-gray-400" : "text-gray-600"
-                    }`}
-                  >
-                    This Month
-                  </p>
-                    
-                  <p
-                    className={`text-lg font-semibold ${
-                      darkMode ? "text-gray-100" : "text-gray-900"
-                    }`}
-                  >
-                        
-                    {
-                      reports.filter(
-                        (r) =>
-                          r.createdAt &&
-                          new Date(r.createdAt) > subDays(new Date(), 30)
-                      ).length
-                    }
-                      
-                  </p>
-                  
-                </div>
-                   
-              </div>
-                  {/* Total Teams */}
-              {/*     <div className={`text-center p-4 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+  {/*Centered Total Tournaments */}
+  <div className={`text-center p-4 rounded-xl col-span-2 mx-auto w-1/2 ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+    <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Tournaments</p>
+    <p className={`text-lg font-semibold ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+      {teams.length}
+    </p>
+  </div>
+</div>
+
+            </div>
+          </div>
+
+         <div className={`backdrop-blur-sm rounded-2xl shadow-lg border p-6 ${
+  darkMode 
+    ? 'bg-gray-800/70 border-gray-700/20' 
+    : 'bg-white/70 border-white/20'
+}`}>
+  <div className="flex items-center justify-between mb-6">
+    <div>
+      <h3 className={`text-xl font-bold ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>Reports Analytics</h3>
+      <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Generated reports and insights</p>
+    </div>
+    <FileText className="w-6 h-6 text-amber-600" />
+  </div>
+
+  <div className="space-y-6">
+    {/* Total Reports */}
+    <div className={`flex items-center justify-between p-4 rounded-xl ${
+      darkMode 
+        ? 'bg-gradient-to-r from-amber-900/50 to-amber-800/50' 
+        : 'bg-gradient-to-r from-amber-50 to-amber-100'
+    }`}>
+      <div>
+        <p className="text-amber-700 font-medium">Total Reports</p>
+        <p className={`text-2xl font-bold ${darkMode ? 'text-amber-400' : 'text-amber-900'}`}>
+          {formatNumber(reports.length)}
+        </p>
+      </div>
+      <div className="text-amber-600">
+        <BarChart3 className="w-8 h-8" />
+      </div>
+    </div>
+
+    {/* This Week & This Month */}
+    <div className="grid grid-cols-2 gap-4">
+      <div className={`text-center p-4 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+        <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>This Week</p>
+        <p className={`text-lg font-semibold ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+          {reports.filter(r => r.createdAt && new Date(r.createdAt) > subDays(new Date(), 7)).length}
+        </p>
+      </div>
+
+      <div className={`text-center p-4 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+        <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>This Month</p>
+        <p className={`text-lg font-semibold ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+          {reports.filter(r => r.createdAt && new Date(r.createdAt) > subDays(new Date(), 30)).length}
+        </p>
+      </div>
+    </div>
+
+    {/* Total Teams */}
+{/*     <div className={`text-center p-4 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
       <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Tournaments</p>
       <p className={`text-lg font-semibold ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>{teams.length}</p>
     </div> */}

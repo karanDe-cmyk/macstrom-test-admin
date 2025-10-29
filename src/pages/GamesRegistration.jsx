@@ -22,8 +22,8 @@ const TournamentGroups = () => {
       setLoading(true);
       
       const [freefireResponse, pubgResponse, freefireWinnerResponse, pubgWinnerResponse] = await Promise.all([
-        axios.get('https://macstrombattle-api.kglame.com/api/macstrom-tournament/freefire/groups'),
-        axios.get('https://macstrombattle-api.kglame.com/api/macstrom-tournament/pubg/groups'),
+        axiosInstance.get('/macstrom-tournament/freefire/groups'),
+        axiosInstance.get('/macstrom-tournament/pubg/groups'),
         axiosInstance.get('/macstrom-tournament/freefire/winner-groups'),
         axiosInstance.get('/macstrom-tournament/pubg/winner-groups')
       ]);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import axiosInstance from '../utils/axios';
 
 const TransactionsTable = () => {
   const [transactions, setTransactions] = useState([]);
@@ -13,20 +14,21 @@ const TransactionsTable = () => {
     fetchTransactions();
   }, []);
 
-  const fetchTransactions = async () => {
-    try {
-      const response = await fetch('https://macstrombattle-api.kglame.com/api/eventregister/payments/imb/transactions');
-      const result = await response.json();
-      if (result.success) {
-        setTransactions(result.data);
-        setFilteredData(result.data);
-      }
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching transactions:', error);
-      setLoading(false);
+const fetchTransactions = async () => {
+  try {
+    const response = await axiosInstance.get('/eventregister/payments/imb/transactions');
+    const result = response.data;
+    if (result.success) {
+      setTransactions(result.data);
+      setFilteredData(result.data);
     }
-  };
+    setLoading(false);
+  } catch (error) {
+    console.error('Error fetching transactions:', error);
+    setLoading(false);
+  }
+};
+
 
   const formatToIST = (dateString) => {
     const date = new Date(dateString);
@@ -126,8 +128,8 @@ const TransactionsTable = () => {
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Merchant Order ID</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">UTR Number</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Amount (INR)</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Payer Mobile</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Amount</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Mobile No.</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Created At</th>
                 </tr>
               </thead>

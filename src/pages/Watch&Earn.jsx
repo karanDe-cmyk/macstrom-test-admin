@@ -23,17 +23,21 @@ const AdsAdmin = () => {
   });
 
   const API_BASE = 'https://macstrombattle-api.kglame.com/api/admin/ads';
-  const AUTH_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQ0LCJyb2xlIjoiQWRtaW4iLCJpYXQiOjE3NTk0ODQzNzUsImV4cCI6MTc2MDc4MDM3NX0.OFj8dTuFDAeUho39ZsciOxqswK2RgQCoV3doJsQWq-8';
-  
-  const getHeaders = (isFormData = false) => {
-    const headers = {
-      'Authorization': `Bearer ${AUTH_TOKEN}`
-    };
-    if (!isFormData) {
-      headers['Content-Type'] = 'application/json';
-    }
-    return headers;
-  };
+const getHeaders = (isFormData = false) => {
+  const token = localStorage.getItem("authToken");
+  const headers = {};
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  if (!isFormData) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  return headers;
+};
+
 
   const fetchAds = async () => {
     setLoading(true);

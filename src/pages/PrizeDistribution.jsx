@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Plus, Trash2, Edit3, Save, X, Trophy, Gift, Users, Zap } from 'lucide-react';
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import axiosInstance from '../utils/axios';
 
 
 const TournamentAdminPanel = () => {
@@ -16,27 +17,49 @@ const TournamentAdminPanel = () => {
   const [newBenefit, setNewBenefit] = useState({ category: '', icon: 'gift', items: [{ name: '', description: '' }] });
 
   const API_BASE_URL = 'https://macstrombattle-api.kglame.com/api';
-  const AUTH_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsInJvbGUiOiJTdXBlckFkbWluIiwiaWF0IjoxNzU4NzE1NjU5LCJleHAiOjE3NjAwMTE2NTl9.jIXfpq3K2-_vi3dp2CbKL7tBFfETyCiDsdpEd6r3aoo';
+  
 
   // Helper function for API requests with Axios
-  const apiRequest = async (endpoint, options = {}) => {
-    const url = `${API_BASE_URL}${endpoint}`;
-    const config = {
-      headers: {
-        'Authorization': `Bearer ${AUTH_TOKEN}`,
-        'Content-Type': 'application/json',
-        ...options.headers
-      },
-      ...options
-    };
+  // const apiRequest = async (endpoint, options = {}) => {
+  //   const url = `${API_BASE_URL}${endpoint}`;
+  //   const config = {
+  //     headers: {
+  //       'Authorization': `Bearer ${AUTH_TOKEN}`,
+  //       'Content-Type': 'application/json',
+  //       ...options.headers
+  //     },
+  //     ...options
+  //   };
 
-    try {
-      const response = await axios(url, config);
-      return response.data;
-    } catch (error) {
-      throw new Error(error.response?.data?.message || `HTTP error! status: ${error.response?.status}`);
-    }
+  //   try {
+  //     const response = await axios(url, config);
+  //     return response.data;
+  //   } catch (error) {
+  //     throw new Error(error.response?.data?.message || `HTTP error! status: ${error.response?.status}`);
+  //   }
+  // };
+  const apiRequest = async (endpoint, options = {}) => {
+  const token = localStorage.getItem("authToken"); // get token from localStorage
+  const url = `${API_BASE_URL}${endpoint}`;
+
+  const config = {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}), // only add header if token exists
+      ...options.headers,
+    },
+    ...options,
   };
+
+  try {
+    const response = await axios(url, config);
+    return response.data;
+  } catch (error) {
+    console.error("API Error:", error);
+    throw new Error(error.response?.data?.message || `HTTP error! status: ${error.response?.status}`);
+  }
+};
+
 
   // Fetch prizes and benefits on component mount
   useEffect(() => {
@@ -72,7 +95,7 @@ const TournamentAdminPanel = () => {
           category: benefit.categoryName,
           icon: benefit.icon,
           items: benefit.items.map(item => ({
-            id: item.id || Date.now() + Math.random(), // Generate temporary ID if not provided
+            id: item.id || Date.now() + Math.random(), 
             name: item.name,
             description: item.description
           }))

@@ -32,9 +32,12 @@ const AdminManagement = () => {
 
   // New states for modules and submodules
   const [modules, setModules] = useState([]);
-  const [selectedModule, setSelectedModule] = useState("");
-  const [selectedSubmodule, setSelectedSubmodule] = useState("");
-  const [availableSubmodules, setAvailableSubmodules] = useState([]);
+
+  // New states for bulk selection
+  const [selectedModulePermissions, setSelectedModulePermissions] = useState(
+    []
+  );
+  const [selectAllModules, setSelectAllModules] = useState(false);
 
   const getRelativeTime = (dateString) => {
     const date = new Date(dateString);
@@ -95,22 +98,6 @@ const AdminManagement = () => {
     }
   };
 
-  // Update submodules when module is selected
-  useEffect(() => {
-    if (selectedModule) {
-      const module = modules.find(m => m.id === selectedModule);
-      if (module && module.submodules) {
-        setAvailableSubmodules(module.submodules);
-      } else {
-        setAvailableSubmodules([]);
-      }
-      setSelectedSubmodule(""); // Reset submodule selection
-    } else {
-      setAvailableSubmodules([]);
-      setSelectedSubmodule("");
-    }
-  }, [selectedModule, modules]);
-
   const fetchAdmins = async () => {
     try {
       setLoading(true);
@@ -131,64 +118,187 @@ const AdminManagement = () => {
     fetchModules(); // Fetch modules when component mounts
   }, []);
 
-  // Function to add permission from module/submodule selection
-  const addModulePermission = () => {
-    if (!selectedModule) {
-      toast.error("Please select a module");
-      return;
-    }
-
-    const selectedModuleData = modules.find(m => m.id === selectedModule);
-    if (!selectedModuleData) {
-      toast.error("Selected module not found");
-      return;
-    }
-
-    let permissionName = selectedModuleData.name;
-    let moduleId = selectedModuleData.id;
-    let submoduleId = null;
-    let submoduleName = null;
-
-    if (selectedSubmodule) {
-      const selectedSubmoduleData = availableSubmodules.find(s => s.id === selectedSubmodule);
-      if (selectedSubmoduleData) {
-        permissionName = `${selectedSubmoduleData.name}`;
-        submoduleId = selectedSubmoduleData.id;
-        submoduleName = selectedSubmoduleData.name;
+  const isPermissionDuplicate = (permissions, newPermission) => {
+    return permissions.some((existingPerm) => {
+      // For module-based permissions, check moduleId and submoduleId
+      if (existingPerm.moduleId && newPermission.moduleId) {
+        return (
+          existingPerm.moduleId === newPermission.moduleId &&
+          existingPerm.submoduleId === newPermission.submoduleId
+        );
       }
+      // For custom permissions, check permission name (case insensitive)
+      if (existingPerm.isCustom && newPermission.isCustom) {
+        return (
+          existingPerm.permission.toLowerCase() ===
+          newPermission.permission.toLowerCase()
+        );
+      }
+      // Cross-check: if names match regardless of type
+      return (
+        existingPerm.permission.toLowerCase() ===
+        newPermission.permission.toLowerCase()
+      );
+    });
+  };
+
+  // Ensure module/submodule checkboxes are pre-selected when opening the edit modal.
+
+  useEffect(() => {
+    if (!editPermissionsModal) return;
+
+    try {
+      const preSelected = [];
+
+      (editingPermissions || []).forEach((p) => {
+        if (p && p.moduleId) {
+          if (p.submoduleId) {
+            preSelected.push({
+              id: `submodule-${p.submoduleId}`,
+              name: p.submoduleName || p.permission || "",
+              type: "submodule",
+              moduleId: p.moduleId,
+              moduleName: p.moduleName || "",
+              submoduleId: p.submoduleId,
+              submoduleName: p.submoduleName || "",
+            });
+          } else {
+            preSelected.push({
+              id: `module-${p.moduleId}`,
+              name: p.moduleName || p.permission || "",
+              type: "module",
+              moduleId: p.moduleId,
+              moduleName: p.moduleName || "",
+              submoduleId: null,
+              submoduleName: null,
+            });
+          }
+        }
+      });
+
+      // Deduplicate
+      const unique = [];
+      const seen = new Set();
+      preSelected.forEach((it) => {
+        if (it && it.id && !seen.has(it.id)) {
+          seen.add(it.id);
+          unique.push(it);
+        }
+      });
+
+      setSelectedModulePermissions(unique);
+
+      if (modules && modules.length > 0) {
+        const total = modules.reduce(
+          (acc, m) =>
+            acc + 1 + (Array.isArray(m.submodules) ? m.submodules.length : 0),
+          0
+        );
+        setSelectAllModules(unique.length > 0 && unique.length === total);
+      } else {
+        setSelectAllModules(false);
+      }
+    } catch (err) {
+      console.error("prepare selections error", err);
+      setSelectedModulePermissions([]);
+      setSelectAllModules(false);
     }
+  }, [editPermissionsModal, editingPermissions, modules]);
 
-    // Check if permission already exists
-    const exists = newAdmin.permissions.some(p => 
-      p.moduleId === moduleId && p.submoduleId === submoduleId
-    );
+  // Function to get all available permissions from modules and submodules
+  const getAllAvailablePermissions = () => {
+    const permissions = [];
 
-    if (exists) {
-      toast.error("This permission already exists");
+    modules.forEach((module) => {
+      // Add module-level permission
+      permissions.push({
+        id: `module-${module.id}`,
+        name: module.name,
+        type: "module",
+        moduleId: module.id,
+        moduleName: module.name,
+        submoduleId: null,
+        submoduleName: null,
+      });
+
+      // Add submodule-level permissions
+      if (module.submodules && module.submodules.length > 0) {
+        module.submodules.forEach((submodule) => {
+          permissions.push({
+            id: `submodule-${submodule.id}`,
+            name: `${submodule.name}`,
+            type: "submodule",
+            moduleId: module.id,
+            moduleName: module.name,
+            submoduleId: submodule.id,
+            submoduleName: submodule.name,
+          });
+        });
+      }
+    });
+
+    return permissions;
+  };
+
+  // Select all available permissions
+  const handleSelectAllModules = () => {
+    if (selectAllModules) {
+      setSelectedModulePermissions([]);
+    } else {
+      setSelectedModulePermissions(getAllAvailablePermissions());
+    }
+    setSelectAllModules(!selectAllModules);
+  };
+
+  // Add selected module permissions
+  const addSelectedModulePermissions = () => {
+    if (selectedModulePermissions.length === 0) {
+      toast.error("Please select at least one permission");
       return;
     }
 
-    const newPermission = {
-      permission: permissionName,
-      granted: true,
-      moduleId: moduleId,
-      moduleName: selectedModuleData.name,
-      submoduleId: submoduleId,
-      submoduleName: submoduleName,
-      isCustom: false,
-      subPermissions: []
-    };
+    const newPermissions = [...newAdmin.permissions];
+    let addedCount = 0;
+    let duplicateCount = 0;
 
-    setNewAdmin(prev => ({
-      ...prev,
-      permissions: [...prev.permissions, newPermission]
-    }));
+    selectedModulePermissions.forEach((selectedPerm) => {
+      const newPermission = {
+        permission: selectedPerm.name,
+        granted: true,
+        moduleId: selectedPerm.moduleId,
+        moduleName: selectedPerm.moduleName,
+        submoduleId: selectedPerm.submoduleId,
+        submoduleName: selectedPerm.submoduleName,
+        isCustom: false,
+        subPermissions: [],
+      };
 
-    // Reset selections
-    setSelectedModule("");
-    setSelectedSubmodule("");
-    
-    toast.success(`Added permission: ${permissionName}`);
+      // Check if permission already exists
+      if (isPermissionDuplicate(newPermissions, newPermission)) {
+        duplicateCount++;
+      } else {
+        newPermissions.push(newPermission);
+        addedCount++;
+      }
+    });
+
+    if (addedCount > 0) {
+      setNewAdmin((prev) => ({
+        ...prev,
+        permissions: newPermissions,
+      }));
+
+      let message = `Added ${addedCount} permission(s)`;
+      if (duplicateCount > 0) {
+        message += `, ${duplicateCount} duplicate(s) skipped`;
+      }
+
+      toast.success(message);
+      setSelectedModulePermissions([]);
+      setSelectAllModules(false);
+    } else if (duplicateCount > 0) {
+      toast.error("All selected permissions already exist");
+    }
   };
 
   const handleViewPermissions = (permissions) => {
@@ -202,26 +312,22 @@ const AdminManagement = () => {
       return;
     }
 
-    const exists = newAdmin.permissions.find(
-      (p) => p.permission.toLowerCase() === permissionInput.trim().toLowerCase()
-    );
+    const newPermission = {
+      permission: permissionInput.trim(),
+      granted: true,
+      subPermissions: [],
+      isCustom: true,
+    };
 
-    if (exists) {
+    // Check for duplicates across all permission types
+    if (isPermissionDuplicate(newAdmin.permissions, newPermission)) {
       toast.error("Permission already exists");
       return;
     }
 
     setNewAdmin({
       ...newAdmin,
-      permissions: [
-        ...newAdmin.permissions,
-        {
-          permission: permissionInput.trim(),
-          granted: true,
-          subPermissions: [],
-          isCustom: true
-        },
-      ],
+      permissions: [...newAdmin.permissions, newPermission],
     });
     setPermissionInput("");
   };
@@ -285,90 +391,32 @@ const AdminManagement = () => {
     setNewAdmin({ ...newAdmin, permissions: updated });
   };
 
-  // Function to add permission from module/submodule selection in edit modal
-const addEditModulePermission = () => {
-  if (!selectedModule) {
-    toast.error("Please select a module");
-    return;
-  }
-
-  const selectedModuleData = modules.find(m => m.id === selectedModule);
-  if (!selectedModuleData) {
-    toast.error("Selected module not found");
-    return;
-  }
-
-  let permissionName = selectedModuleData.name;
-  let moduleId = selectedModuleData.id;
-  let submoduleId = null;
-  let submoduleName = null;
-
-  if (selectedSubmodule) {
-    const selectedSubmoduleData = availableSubmodules.find(s => s.id === selectedSubmodule);
-    if (selectedSubmoduleData) {
-      permissionName = `${selectedSubmoduleData.name}`;
-      submoduleId = selectedSubmoduleData.id;
-      submoduleName = selectedSubmoduleData.name;
-    }
-  }
-
-  // Check if permission already exists
-  const exists = editingPermissions.some(p => 
-    p.moduleId === moduleId && p.submoduleId === submoduleId
-  );
-
-  if (exists) {
-    toast.error("This permission already exists");
+  // Edit form permission functions
+const addEditPermission = () => {
+  if (!editPermissionInput.trim()) {
+    toast.error("Permission name cannot be empty");
     return;
   }
 
   const newPermission = {
-    permission: permissionName,
+    permission: editPermissionInput.trim(),
     granted: true,
-    moduleId: moduleId,
-    moduleName: selectedModuleData.name,
-    submoduleId: submoduleId,
-    submoduleName: submoduleName,
-    isCustom: false,
-    subPermissions: []
+    subPermissions: [],
+    isCustom: true,
   };
 
-  setEditingPermissions(prev => [...prev, newPermission]);
+  // Check for duplicates across all permission types
+  if (isPermissionDuplicate(editingPermissions, newPermission)) {
+    toast.error("Permission already exists");
+    return;
+  }
 
-  // Reset selections
-  setSelectedModule("");
-  setSelectedSubmodule("");
-  
-  toast.success(`Added permission: ${permissionName}`);
+  setEditingPermissions([
+    ...editingPermissions,
+    newPermission
+  ]);
+  setEditPermissionInput("");
 };
-
-  // Edit form permission functions
-  const addEditPermission = () => {
-    if (!editPermissionInput.trim()) {
-      toast.error("Permission name cannot be empty");
-      return;
-    }
-
-    const exists = editingPermissions.find(
-      (p) =>
-        p.permission.toLowerCase() === editPermissionInput.trim().toLowerCase()
-    );
-
-    if (exists) {
-      toast.error("Permission already exists");
-      return;
-    }
-
-    setEditingPermissions([
-      ...editingPermissions,
-      {
-        permission: editPermissionInput.trim(),
-        granted: true,
-        subPermissions: [],
-      },
-    ]);
-    setEditPermissionInput("");
-  };
 
   const removeEditPermission = (index) => {
     const updated = editingPermissions.filter((_, i) => i !== index);
@@ -463,31 +511,26 @@ const addEditModulePermission = () => {
     }
   };
 
-const handleEditPermissions = (admin) => {
-  setEditingAdminId(admin.id);
-  setEditingName(admin.name || "");
-  setMaxLoginPerDevice(admin.maxLoginPerDevice || "");
-  setEditingIsActive(admin.isActive ?? true);
+  const handleEditPermissions = (admin) => {
+    setEditingAdminId(admin.id);
+    setEditingName(admin.name || "");
+    setMaxLoginPerDevice(admin.maxLoginPerDevice || "");
+    setEditingIsActive(admin.isActive ?? true);
 
-  const perms = (admin.permissions || []).map((p) => ({
-    permission: p.permission,
-    granted: p.granted,
-    subPermissions: p.subPermissions || [],
-    moduleId: p.moduleId,
-    moduleName: p.moduleName,
-    submoduleId: p.submoduleId,
-    submoduleName: p.submoduleName,
-    isCustom: p.isCustom || false
-  }));
-  setEditingPermissions(perms);
-  setSelectedAdmin(admin);
-  
-  // Reset module selections
-  setSelectedModule("");
-  setSelectedSubmodule("");
-  
-  setEditPermissionsModal(true);
-};
+    const perms = (admin.permissions || []).map((p) => ({
+      permission: p.permission,
+      granted: p.granted,
+      subPermissions: p.subPermissions || [],
+      moduleId: p.moduleId,
+      moduleName: p.moduleName,
+      submoduleId: p.submoduleId,
+      submoduleName: p.submoduleName,
+      isCustom: p.isCustom || false,
+    }));
+    setEditingPermissions(perms);
+    setSelectedAdmin(admin);
+    setEditPermissionsModal(true);
+  };
 
   const handleDeleteConfirmed = async () => {
     if (!adminToDelete) return;
@@ -757,7 +800,7 @@ const handleEditPermissions = (admin) => {
       {/* Create Admin Modal */}
       {isCreateOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-zinc-800 dark:text-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-zinc-800 dark:text-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             {/* Header */}
             <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-blue-600 text-white p-6 rounded-t-xl">
               <h2 className="text-2xl font-bold flex items-center gap-2">
@@ -863,59 +906,192 @@ const handleEditPermissions = (admin) => {
                   Permissions Management
                 </h3>
 
-                {/* Module/Submodule Selection */}
+                {/* Bulk Module Permissions Selection */}
                 <div className="bg-gray-50 dark:bg-zinc-700 p-4 rounded-lg mb-4">
-                  <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-                    Add Permissions from Modules
-                  </label>
-                  
-                  {/* Module Dropdown */}
-                  <div className="mb-3">
-                    <label className="block text-sm font-medium mb-1 text-gray-600 dark:text-gray-400">
-                      Select Module *
+                  <div className="flex justify-between items-center mb-3">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Select Multiple Permissions from Modules
                     </label>
-                    <select
-                      value={selectedModule}
-                      onChange={(e) => setSelectedModule(e.target.value)}
-                      className="w-full border dark:border-zinc-600 bg-white dark:bg-zinc-800 text-black dark:text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Choose a module...</option>
-                      {modules.map((module) => (
-                        <option key={module.id} value={module.id}>
-                          {module.name}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={selectAllModules}
+                        onChange={handleSelectAllModules}
+                        className="w-4 h-4 accent-blue-600"
+                      />
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        Select All
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Submodule Dropdown */}
-                  {selectedModule && availableSubmodules.length > 0 && (
-                    <div className="mb-3">
-                      <label className="block text-sm font-medium mb-1 text-gray-600 dark:text-gray-400">
-                        Select Submodule
-                      </label>
-                      <select
-                        value={selectedSubmodule}
-                        onChange={(e) => setSelectedSubmodule(e.target.value)}
-                        className="w-full border dark:border-zinc-600 bg-white dark:bg-zinc-800 text-black dark:text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">No submodule (Module-level permission)</option>
-                        {availableSubmodules.map((submodule) => (
-                          <option key={submodule.id} value={submodule.id}>
-                            {submodule.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
+                  <div className="max-h-48 overflow-y-auto border dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 p-3">
+                    {modules.map((module) => (
+                      <div key={module.id} className="mb-3">
+                        {/* Module Checkbox */}
+                        <div className="flex items-center gap-2 mb-2 p-2 hover:bg-gray-50 dark:hover:bg-zinc-700 rounded">
+                          <input
+                            type="checkbox"
+                            checked={selectedModulePermissions.some(
+                              (p) => p.id === `module-${module.id}`
+                            )}
+                            onChange={() => {
+                              const modulePermission = {
+                                id: `module-${module.id}`,
+                                name: module.name,
+                                type: "module",
+                                moduleId: module.id,
+                                moduleName: module.name,
+                                submoduleId: null,
+                                submoduleName: null,
+                              };
 
-                  <button
-                    onClick={addModulePermission}
-                    disabled={!selectedModule}
-                    className="w-full bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium"
-                  >
-                    Add Module Permission
-                  </button>
+                              const isModuleSelected =
+                                selectedModulePermissions.some(
+                                  (p) => p.id === `module-${module.id}`
+                                );
+
+                              if (isModuleSelected) {
+                                // Remove module and all its submodules
+                                setSelectedModulePermissions((prev) =>
+                                  prev.filter(
+                                    (p) =>
+                                      p.moduleId !== module.id &&
+                                      !(
+                                        p.type === "submodule" &&
+                                        p.moduleId === module.id
+                                      )
+                                  )
+                                );
+                              } else {
+                                // Add module and all its submodules
+                                const moduleAndSubmodules = [modulePermission];
+
+                                // Add all submodules if they exist
+                                if (
+                                  module.submodules &&
+                                  module.submodules.length > 0
+                                ) {
+                                  module.submodules.forEach((submodule) => {
+                                    moduleAndSubmodules.push({
+                                      id: `submodule-${submodule.id}`,
+                                      name: `${submodule.name}`,
+                                      type: "submodule",
+                                      moduleId: module.id,
+                                      moduleName: module.name,
+                                      submoduleId: submodule.id,
+                                      submoduleName: submodule.name,
+                                    });
+                                  });
+                                }
+
+                                setSelectedModulePermissions((prev) => {
+                                  const newSelection = [...prev];
+                                  moduleAndSubmodules.forEach((perm) => {
+                                    if (
+                                      !newSelection.some(
+                                        (p) => p.id === perm.id
+                                      )
+                                    ) {
+                                      newSelection.push(perm);
+                                    }
+                                  });
+                                  return newSelection;
+                                });
+                              }
+                            }}
+                            className="w-4 h-4 accent-blue-600"
+                          />
+                          <span className="font-medium text-gray-800 dark:text-gray-200">
+                            {module.name}
+                          </span>
+                          {module.submodules &&
+                            module.submodules.length > 0 && (
+                              <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                                ({module.submodules.length} submodules)
+                              </span>
+                            )}
+                        </div>
+
+                        {/* Submodule Checkboxes */}
+                        {module.submodules && module.submodules.length > 0 && (
+                          <div className="ml-6 space-y-1">
+                            {module.submodules.map((submodule) => (
+                              <div
+                                key={submodule.id}
+                                className="flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-zinc-700 rounded"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={selectedModulePermissions.some(
+                                    (p) => p.id === `submodule-${submodule.id}`
+                                  )}
+                                  onChange={() => {
+                                    const submodulePermission = {
+                                      id: `submodule-${submodule.id}`,
+                                      name: `${submodule.name}`,
+                                      type: "submodule",
+                                      moduleId: module.id,
+                                      moduleName: module.name,
+                                      submoduleId: submodule.id,
+                                      submoduleName: submodule.name,
+                                    };
+
+                                    const isSubmoduleSelected =
+                                      selectedModulePermissions.some(
+                                        (p) =>
+                                          p.id === `submodule-${submodule.id}`
+                                      );
+
+                                    if (isSubmoduleSelected) {
+                                      // Remove submodule
+                                      setSelectedModulePermissions((prev) =>
+                                        prev.filter(
+                                          (p) =>
+                                            p.id !== `submodule-${submodule.id}`
+                                        )
+                                      );
+                                    } else {
+                                      // Add submodule
+                                      setSelectedModulePermissions((prev) => {
+                                        if (
+                                          !prev.some(
+                                            (p) =>
+                                              p.id ===
+                                              `submodule-${submodule.id}`
+                                          )
+                                        ) {
+                                          return [...prev, submodulePermission];
+                                        }
+                                        return prev;
+                                      });
+                                    }
+                                  }}
+                                  className="w-4 h-4 accent-green-600"
+                                />
+                                <span className="text-sm text-gray-700 dark:text-gray-300">
+                                  {submodule.name}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex justify-between items-center mt-3">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      {selectedModulePermissions.length} permission(s) selected
+                    </span>
+                    <button
+                      onClick={addSelectedModulePermissions}
+                      disabled={selectedModulePermissions.length === 0}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium"
+                    >
+                      Add Selected Permissions
+                    </button>
+                  </div>
                 </div>
 
                 {/* Custom Permission Input */}
@@ -972,9 +1148,10 @@ const handleEditPermissions = (admin) => {
                               {perm.moduleName && (
                                 <span className="text-xs text-gray-500 dark:text-gray-400">
                                   {perm.moduleName}
-                                  {perm.submoduleName && ` → ${perm.submoduleName}`}
-                                  {!perm.isCustom && ' (Module-based)'}
-                                  {perm.isCustom && ' (Custom)'}
+                                  {perm.submoduleName &&
+                                    ` → ${perm.submoduleName}`}
+                                  {!perm.isCustom && " (Module-based)"}
+                                  {perm.isCustom && " (Custom)"}
                                 </span>
                               )}
                             </div>
@@ -1010,7 +1187,8 @@ const handleEditPermissions = (admin) => {
                                       setSubPermissionInput(e.target.value)
                                     }
                                     onKeyPress={(e) =>
-                                      e.key === "Enter" && addSubPermission(index)
+                                      e.key === "Enter" &&
+                                      addSubPermission(index)
                                     }
                                     className="flex-1 border dark:border-zinc-600 bg-white dark:bg-zinc-800 text-black dark:text-white px-3 py-1.5 rounded text-sm"
                                     autoFocus
@@ -1048,7 +1226,10 @@ const handleEditPermissions = (admin) => {
                                     type="checkbox"
                                     checked={sub.granted}
                                     onChange={() =>
-                                      toggleSubPermissionGranted(index, subIndex)
+                                      toggleSubPermissionGranted(
+                                        index,
+                                        subIndex
+                                      )
                                     }
                                     className="w-3 h-3 accent-blue-600"
                                   />
@@ -1092,8 +1273,8 @@ const handleEditPermissions = (admin) => {
                     setPermissionInput("");
                     setSubPermissionInput("");
                     setSelectedParentIndex(null);
-                    setSelectedModule("");
-                    setSelectedSubmodule("");
+                    setSelectedModulePermissions([]);
+                    setSelectAllModules(false);
                   }}
                 >
                   Cancel
@@ -1149,8 +1330,8 @@ const handleEditPermissions = (admin) => {
                       setPermissionInput("");
                       setSubPermissionInput("");
                       setSelectedParentIndex(null);
-                      setSelectedModule("");
-                      setSelectedSubmodule("");
+                      setSelectedModulePermissions([]);
+                      setSelectAllModules(false);
                     } catch (err) {
                       toast.error(
                         err.response?.data?.message || "Failed to create admin"
@@ -1225,305 +1406,486 @@ const handleEditPermissions = (admin) => {
         </div>
       )}
 
-{/* Edit Permissions Modal */}
-{editPermissionsModal && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-    <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-      {/* Header */}
-      <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-t-xl">
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          <Pencil className="w-6 h-6" />
-          Edit Admin Details
-        </h2>
-        <p className="text-sm text-blue-100 mt-1">
-          Update administrator information and permissions
-        </p>
-      </div>
-
-      <div className="p-6">
-        {/* Basic Info */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-            Admin Name *
-          </label>
-          <input
-            type="text"
-            value={editingName}
-            onChange={(e) => setEditingName(e.target.value)}
-            className="w-full px-4 py-2.5 border dark:border-zinc-600 rounded-lg dark:bg-zinc-700 dark:text-white focus:ring-2 focus:ring-blue-500 transition"
-            placeholder="Enter admin name"
-          />
-        </div>
-        <div className="mb-6">
-          <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-            Max Device Login *
-          </label>
-          <input
-            type="text"
-            value={maxLoginPerDevice}
-            onChange={(e) => setMaxLoginPerDevice(Number(e.target.value))}
-            className="w-full px-4 py-2.5 border dark:border-zinc-600 rounded-lg dark:bg-zinc-700 dark:text-white focus:ring-2 focus:ring-blue-500 transition"
-            placeholder="Enter max device login"
-          />
-        </div>
-
-        {/* Permissions Section */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-700 dark:text-gray-200">
-            <ShieldCheck className="w-5 h-5" />
-            Permissions Management
-          </h3>
-
-          {/* Module/Submodule Selection for Edit */}
-          <div className="bg-gray-50 dark:bg-zinc-700 p-4 rounded-lg mb-4">
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Add Permissions from Modules
-            </label>
-            
-            {/* Module Dropdown */}
-            <div className="mb-3">
-              <label className="block text-sm font-medium mb-1 text-gray-600 dark:text-gray-400">
-                Select Module *
-              </label>
-              <select
-                value={selectedModule}
-                onChange={(e) => setSelectedModule(e.target.value)}
-                className="w-full border dark:border-zinc-600 bg-white dark:bg-zinc-800 text-black dark:text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Choose a module...</option>
-                {modules.map((module) => (
-                  <option key={module.id} value={module.id}>
-                    {module.name}
-                  </option>
-                ))}
-              </select>
+      {/* Edit Permissions Modal */}
+      {editPermissionsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-t-xl">
+              <h2 className="text-2xl font-bold flex items-center gap-2">
+                <Pencil className="w-6 h-6" />
+                Edit Admin Details
+              </h2>
+              <p className="text-sm text-blue-100 mt-1">
+                Update administrator information and permissions
+              </p>
             </div>
 
-            {/* Submodule Dropdown */}
-            {selectedModule && availableSubmodules.length > 0 && (
-              <div className="mb-3">
-                <label className="block text-sm font-medium mb-1 text-gray-600 dark:text-gray-400">
-                  Select Submodule
+            <div className="p-6">
+              {/* Basic Info */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Admin Name *
                 </label>
-                <select
-                  value={selectedSubmodule}
-                  onChange={(e) => setSelectedSubmodule(e.target.value)}
-                  className="w-full border dark:border-zinc-600 bg-white dark:bg-zinc-800 text-black dark:text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">No submodule (Module-level permission)</option>
-                  {availableSubmodules.map((submodule) => (
-                    <option key={submodule.id} value={submodule.id}>
-                      {submodule.name}
-                    </option>
-                  ))}
-                </select>
+                <input
+                  type="text"
+                  value={editingName}
+                  onChange={(e) => setEditingName(e.target.value)}
+                  className="w-full px-4 py-2.5 border dark:border-zinc-600 rounded-lg dark:bg-zinc-700 dark:text-white focus:ring-2 focus:ring-blue-500 transition"
+                  placeholder="Enter admin name"
+                />
               </div>
-            )}
-
-            <button
-              onClick={addEditModulePermission}
-              disabled={!selectedModule}
-              className="w-full bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium"
-            >
-              Add Module Permission
-            </button>
-          </div>
-
-          {/* Add Custom Permission Input */}
-          <div className="bg-gray-50 dark:bg-zinc-700 p-4 rounded-lg mb-4">
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Add Custom Permission
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="e.g., Custom Permission"
-                value={editPermissionInput}
-                onChange={(e) => setEditPermissionInput(e.target.value)}
-                onKeyPress={(e) =>
-                  e.key === "Enter" && addEditPermission()
-                }
-                className="flex-1 border dark:border-zinc-600 bg-white dark:bg-zinc-800 text-black dark:text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-              <button
-                onClick={addEditPermission}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition font-medium"
-              >
-                Add Custom
-              </button>
-            </div>
-          </div>
-
-          {/* Permissions List */}
-          <div className="space-y-3 max-h-64 overflow-y-auto">
-            {editingPermissions.length === 0 ? (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                <ShieldCheck className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                <p>No permissions assigned</p>
-                <p className="text-sm">
-                  Add permissions from modules or create custom ones
-                </p>
+              <div className="mb-6">
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Max Device Login *
+                </label>
+                <input
+                  type="text"
+                  value={maxLoginPerDevice}
+                  onChange={(e) => setMaxLoginPerDevice(Number(e.target.value))}
+                  className="w-full px-4 py-2.5 border dark:border-zinc-600 rounded-lg dark:bg-zinc-700 dark:text-white focus:ring-2 focus:ring-blue-500 transition"
+                  placeholder="Enter max device login"
+                />
               </div>
-            ) : (
-              editingPermissions.map((perm, index) => (
-                <div
-                  key={index}
-                  className="bg-white dark:bg-zinc-700 border dark:border-zinc-600 rounded-lg p-4"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-3">
+
+              {/* Permissions Section */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-700 dark:text-gray-200">
+                  <ShieldCheck className="w-5 h-5" />
+                  Permissions Management
+                </h3>
+
+                {/* Bulk Module Permissions Selection for Edit */}
+                <div className="bg-gray-50 dark:bg-zinc-700 p-4 rounded-lg mb-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Select Multiple Permissions from Modules
+                    </label>
+                    <div className="flex items-center gap-2">
                       <input
                         type="checkbox"
-                        checked={perm.granted}
-                        onChange={() =>
-                          toggleEditPermissionGranted(index)
-                        }
+                        checked={selectAllModules}
+                        onChange={handleSelectAllModules}
                         className="w-4 h-4 accent-blue-600"
                       />
-                      <div>
-                        <span className="font-medium text-gray-800 dark:text-gray-200 block">
-                          {perm.permission}
-                        </span>
-                        {perm.moduleName && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {perm.moduleName}
-                            {perm.submoduleName && ` → ${perm.submoduleName}`}
-                            {!perm.isCustom && ' (Module-based)'}
-                            {perm.isCustom && ' (Custom)'}
-                          </span>
-                        )}
-                      </div>
-                      <span
-                        className={`text-xs px-2 py-1 rounded-full ${
-                          perm.granted
-                            ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-                            : "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
-                        }`}
-                      >
-                        {perm.granted ? "Granted" : "Revoked"}
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        Select All
                       </span>
                     </div>
-                    <button
-                      onClick={() => removeEditPermission(index)}
-                      className="text-red-500 hover:text-red-700 p-1"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
                   </div>
 
-                  {/* Sub-permissions - Only for custom permissions */}
-                  {perm.isCustom && (
-                    <div className="ml-7 mt-3">
-                      <div className="flex gap-2 mb-2">
-                        {editSelectedParentIndex === index ? (
-                          <>
-                            <input
-                              type="text"
-                              placeholder="Add sub-permission"
-                              value={editSubPermissionInput}
-                              onChange={(e) =>
-                                setEditSubPermissionInput(e.target.value)
+                  <div className="max-h-48 overflow-y-auto border dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 p-3">
+                    {modules.map((module) => (
+                      <div key={module.id} className="mb-3">
+                        {/* Module Checkbox */}
+                        <div className="flex items-center gap-2 mb-2 p-2 hover:bg-gray-50 dark:hover:bg-zinc-700 rounded">
+                          <input
+                            type="checkbox"
+                            checked={selectedModulePermissions.some(
+                              (p) => p.id === `module-${module.id}`
+                            )}
+                            onChange={() => {
+                              const modulePermission = {
+                                id: `module-${module.id}`,
+                                name: module.name,
+                                type: "module",
+                                moduleId: module.id,
+                                moduleName: module.name,
+                                submoduleId: null,
+                                submoduleName: null,
+                              };
+
+                              const isModuleSelected =
+                                selectedModulePermissions.some(
+                                  (p) => p.id === `module-${module.id}`
+                                );
+
+                              if (isModuleSelected) {
+                                // Remove module and all its submodules
+                                setSelectedModulePermissions((prev) =>
+                                  prev.filter(
+                                    (p) =>
+                                      p.moduleId !== module.id &&
+                                      !(
+                                        p.type === "submodule" &&
+                                        p.moduleId === module.id
+                                      )
+                                  )
+                                );
+                              } else {
+                                // Add module and all its submodules
+                                const moduleAndSubmodules = [modulePermission];
+
+                                // Add all submodules if they exist
+                                if (
+                                  module.submodules &&
+                                  module.submodules.length > 0
+                                ) {
+                                  module.submodules.forEach((submodule) => {
+                                    moduleAndSubmodules.push({
+                                      id: `submodule-${submodule.id}`,
+                                      name: `${submodule.name}`,
+                                      type: "submodule",
+                                      moduleId: module.id,
+                                      moduleName: module.name,
+                                      submoduleId: submodule.id,
+                                      submoduleName: submodule.name,
+                                    });
+                                  });
+                                }
+
+                                setSelectedModulePermissions((prev) => {
+                                  const newSelection = [...prev];
+                                  moduleAndSubmodules.forEach((perm) => {
+                                    if (
+                                      !newSelection.some(
+                                        (p) => p.id === perm.id
+                                      )
+                                    ) {
+                                      newSelection.push(perm);
+                                    }
+                                  });
+                                  return newSelection;
+                                });
                               }
-                              onKeyPress={(e) =>
-                                e.key === "Enter" &&
-                                addEditSubPermission(index)
-                              }
-                              className="flex-1 border dark:border-zinc-600 bg-white dark:bg-zinc-800 text-black dark:text-white px-3 py-1.5 rounded text-sm"
-                              autoFocus
-                            />
-                            <button
-                              onClick={() => addEditSubPermission(index)}
-                              className="bg-green-600 text-white px-3 py-1.5 rounded text-sm hover:bg-green-700"
-                            >
-                              Add
-                            </button>
-                            <button
-                              onClick={() =>
-                                setEditSelectedParentIndex(null)
-                              }
-                              className="bg-gray-400 text-white px-3 py-1.5 rounded text-sm hover:bg-gray-500"
-                            >
-                              Cancel
-                            </button>
-                          </>
-                        ) : (
-                          <button
-                            onClick={() =>
-                              setEditSelectedParentIndex(index)
-                            }
-                            className="text-blue-600 dark:text-blue-400 text-sm hover:underline"
-                          >
-                            + Add Custom Sub-permission
-                          </button>
+                            }}
+                            className="w-4 h-4 accent-blue-600"
+                          />
+                          <span className="font-medium text-gray-800 dark:text-gray-200">
+                            {module.name}
+                          </span>
+                          {module.submodules &&
+                            module.submodules.length > 0 && (
+                              <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                                ({module.submodules.length} submodules)
+                              </span>
+                            )}
+                        </div>
+
+                        {/* Submodule Checkboxes */}
+                        {module.submodules && module.submodules.length > 0 && (
+                          <div className="ml-6 space-y-1">
+                            {module.submodules.map((submodule) => (
+                              <div
+                                key={submodule.id}
+                                className="flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-zinc-700 rounded"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={selectedModulePermissions.some(
+                                    (p) => p.id === `submodule-${submodule.id}`
+                                  )}
+                                  onChange={() => {
+                                    const submodulePermission = {
+                                      id: `submodule-${submodule.id}`,
+                                      name: `${submodule.name}`,
+                                      type: "submodule",
+                                      moduleId: module.id,
+                                      moduleName: module.name,
+                                      submoduleId: submodule.id,
+                                      submoduleName: submodule.name,
+                                    };
+
+                                    const isSubmoduleSelected =
+                                      selectedModulePermissions.some(
+                                        (p) =>
+                                          p.id === `submodule-${submodule.id}`
+                                      );
+
+                                    if (isSubmoduleSelected) {
+                                      // Remove submodule
+                                      setSelectedModulePermissions((prev) =>
+                                        prev.filter(
+                                          (p) =>
+                                            p.id !== `submodule-${submodule.id}`
+                                        )
+                                      );
+                                    } else {
+                                      // Add submodule
+                                      setSelectedModulePermissions((prev) => {
+                                        if (
+                                          !prev.some(
+                                            (p) =>
+                                              p.id ===
+                                              `submodule-${submodule.id}`
+                                          )
+                                        ) {
+                                          return [...prev, submodulePermission];
+                                        }
+                                        return prev;
+                                      });
+                                    }
+                                  }}
+                                  className="w-4 h-4 accent-green-600"
+                                />
+                                <span className="text-sm text-gray-700 dark:text-gray-300">
+                                  {submodule.name}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
                         )}
                       </div>
+                    ))}
+                  </div>
 
-                      {perm.subPermissions?.map((sub, subIndex) => (
-                        <div
-                          key={subIndex}
-                          className="flex items-center justify-between bg-gray-50 dark:bg-zinc-800 p-2 rounded mb-1"
-                        >
-                          <div className="flex items-center gap-2">
+                  <div className="flex justify-between items-center mt-3">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      {selectedModulePermissions.length} permission(s) selected
+                    </span>
+                    <button
+                      onClick={() => {
+                        if (selectedModulePermissions.length === 0) {
+                          toast.error("Please select at least one permission");
+                          return;
+                        }
+
+                        // In the edit modal's "Add Selected Permissions" button onClick handler:
+                        const newPermissions = [...editingPermissions];
+                        let addedCount = 0;
+                        let duplicateCount = 0;
+
+                        selectedModulePermissions.forEach((selectedPerm) => {
+                          const newPermission = {
+                            permission: selectedPerm.name,
+                            granted: true,
+                            moduleId: selectedPerm.moduleId,
+                            moduleName: selectedPerm.moduleName,
+                            submoduleId: selectedPerm.submoduleId,
+                            submoduleName: selectedPerm.submoduleName,
+                            isCustom: false,
+                            subPermissions: [],
+                          };
+
+                          // Check if permission already exists
+                          if (
+                            isPermissionDuplicate(newPermissions, newPermission)
+                          ) {
+                            duplicateCount++;
+                          } else {
+                            newPermissions.push(newPermission);
+                            addedCount++;
+                          }
+                        });
+
+                        if (addedCount > 0) {
+                          setEditingPermissions(newPermissions);
+
+                          let message = `Added ${addedCount} permission(s)`;
+                          if (duplicateCount > 0) {
+                            message += `, ${duplicateCount} duplicate(s) skipped`;
+                          }
+
+                          toast.success(message);
+                          setSelectedModulePermissions([]);
+                          setSelectAllModules(false);
+                        } else if (duplicateCount > 0) {
+                          toast.error("All selected permissions already exist");
+                        }
+                      }}
+                      disabled={selectedModulePermissions.length === 0}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium"
+                    >
+                      Add Selected Permissions
+                    </button>
+                  </div>
+                </div>
+
+                {/* Add Custom Permission Input */}
+                <div className="bg-gray-50 dark:bg-zinc-700 p-4 rounded-lg mb-4">
+                  <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                    Add Custom Permission
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="e.g., Custom Permission"
+                      value={editPermissionInput}
+                      onChange={(e) => setEditPermissionInput(e.target.value)}
+                      onKeyPress={(e) =>
+                        e.key === "Enter" && addEditPermission()
+                      }
+                      className="flex-1 border dark:border-zinc-600 bg-white dark:bg-zinc-800 text-black dark:text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button
+                      onClick={addEditPermission}
+                      className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition font-medium"
+                    >
+                      Add Custom
+                    </button>
+                  </div>
+                </div>
+
+                {/* Permissions List */}
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {editingPermissions.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                      <ShieldCheck className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                      <p>No permissions assigned</p>
+                      <p className="text-sm">
+                        Add permissions from modules or create custom ones
+                      </p>
+                    </div>
+                  ) : (
+                    editingPermissions.map((perm, index) => (
+                      <div
+                        key={index}
+                        className="bg-white dark:bg-zinc-700 border dark:border-zinc-600 rounded-lg p-4"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-3">
                             <input
                               type="checkbox"
-                              checked={sub.granted}
+                              checked={perm.granted}
                               onChange={() =>
-                                toggleEditSubPermissionGranted(
-                                  index,
-                                  subIndex
-                                )
+                                toggleEditPermissionGranted(index)
                               }
-                              className="w-3 h-3 accent-blue-600"
+                              className="w-4 h-4 accent-blue-600"
                             />
-                            <span className="text-sm text-gray-700 dark:text-gray-300">
-                              {sub.permission}
+                            <div>
+                              <span className="font-medium text-gray-800 dark:text-gray-200 block">
+                                {perm.permission}
+                              </span>
+                              {perm.moduleName && (
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  {perm.moduleName}
+                                  {perm.submoduleName &&
+                                    ` → ${perm.submoduleName}`}
+                                  {!perm.isCustom && " (Module-based)"}
+                                  {perm.isCustom && " (Custom)"}
+                                </span>
+                              )}
+                            </div>
+                            <span
+                              className={`text-xs px-2 py-1 rounded-full ${
+                                perm.granted
+                                  ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+                                  : "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
+                              }`}
+                            >
+                              {perm.granted ? "Granted" : "Revoked"}
                             </span>
                           </div>
                           <button
-                            onClick={() =>
-                              removeEditSubPermission(index, subIndex)
-                            }
+                            onClick={() => removeEditPermission(index)}
                             className="text-red-500 hover:text-red-700 p-1"
                           >
-                            <Trash2 className="w-3 h-3" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
-                      ))}
-                    </div>
+
+                        {/* Sub-permissions - Only for custom permissions */}
+                        {perm.isCustom && (
+                          <div className="ml-7 mt-3">
+                            <div className="flex gap-2 mb-2">
+                              {editSelectedParentIndex === index ? (
+                                <>
+                                  <input
+                                    type="text"
+                                    placeholder="Add sub-permission"
+                                    value={editSubPermissionInput}
+                                    onChange={(e) =>
+                                      setEditSubPermissionInput(e.target.value)
+                                    }
+                                    onKeyPress={(e) =>
+                                      e.key === "Enter" &&
+                                      addEditSubPermission(index)
+                                    }
+                                    className="flex-1 border dark:border-zinc-600 bg-white dark:bg-zinc-800 text-black dark:text-white px-3 py-1.5 rounded text-sm"
+                                    autoFocus
+                                  />
+                                  <button
+                                    onClick={() => addEditSubPermission(index)}
+                                    className="bg-green-600 text-white px-3 py-1.5 rounded text-sm hover:bg-green-700"
+                                  >
+                                    Add
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      setEditSelectedParentIndex(null)
+                                    }
+                                    className="bg-gray-400 text-white px-3 py-1.5 rounded text-sm hover:bg-gray-500"
+                                  >
+                                    Cancel
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  onClick={() =>
+                                    setEditSelectedParentIndex(index)
+                                  }
+                                  className="text-blue-600 dark:text-blue-400 text-sm hover:underline"
+                                >
+                                  + Add Custom Sub-permission
+                                </button>
+                              )}
+                            </div>
+
+                            {perm.subPermissions?.map((sub, subIndex) => (
+                              <div
+                                key={subIndex}
+                                className="flex items-center justify-between bg-gray-50 dark:bg-zinc-800 p-2 rounded mb-1"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={sub.granted}
+                                    onChange={() =>
+                                      toggleEditSubPermissionGranted(
+                                        index,
+                                        subIndex
+                                      )
+                                    }
+                                    className="w-3 h-3 accent-blue-600"
+                                  />
+                                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                                    {sub.permission}
+                                  </span>
+                                </div>
+                                <button
+                                  onClick={() =>
+                                    removeEditSubPermission(index, subIndex)
+                                  }
+                                  className="text-red-500 hover:text-red-700 p-1"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))
                   )}
                 </div>
-              ))
-            )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-3 pt-4 border-t dark:border-zinc-700">
+                <button
+                  onClick={() => {
+                    setEditPermissionsModal(false);
+                    setEditPermissionInput("");
+                    setEditSubPermissionInput("");
+                    setEditSelectedParentIndex(null);
+                    setSelectedModulePermissions([]);
+                    setSelectAllModules(false);
+                  }}
+                  className="bg-gray-200 dark:bg-zinc-700 text-gray-700 dark:text-gray-300 px-6 py-2.5 rounded-lg hover:bg-gray-300 dark:hover:bg-zinc-600 transition font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitEditPermissions}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2.5 rounded-lg hover:from-blue-700 hover:to-purple-700 transition font-medium shadow-lg"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-
-        {/* Action Buttons */}
-        <div className="flex justify-end gap-3 pt-4 border-t dark:border-zinc-700">
-          <button
-            onClick={() => {
-              setEditPermissionsModal(false);
-              setEditPermissionInput("");
-              setEditSubPermissionInput("");
-              setEditSelectedParentIndex(null);
-              setSelectedModule("");
-              setSelectedSubmodule("");
-            }}
-            className="bg-gray-200 dark:bg-zinc-700 text-gray-700 dark:text-gray-300 px-6 py-2.5 rounded-lg hover:bg-gray-300 dark:hover:bg-zinc-600 transition font-medium"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={submitEditPermissions}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2.5 rounded-lg hover:from-blue-700 hover:to-purple-700 transition font-medium shadow-lg"
-          >
-            Save Changes
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
-
+      )}
       {/* Delete Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">

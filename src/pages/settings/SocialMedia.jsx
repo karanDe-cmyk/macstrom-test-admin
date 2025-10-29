@@ -180,46 +180,98 @@ const SocialMedia = () => {
     }
   }
 
-  const handleSave = async () => {
-    setIsSaving(true)
-    setApiError(null)
+  // const handleSave = async () => {
+  //   setIsSaving(true)
+  //   setApiError(null)
     
-    // Validate all URLs first
-    const allErrors = {}
-    Object.keys(formData).forEach((key) => {
-      const error = validateUrl(key, formData[key])
-      if (error) {
-        allErrors[key] = error
-      }
-    })
+  //   // Validate all URLs first
+  //   const allErrors = {}
+  //   Object.keys(formData).forEach((key) => {
+  //     const error = validateUrl(key, formData[key])
+  //     if (error) {
+  //       allErrors[key] = error
+  //     }
+  //   })
 
-    if (Object.keys(allErrors).length > 0) {
-      setFormErrors(allErrors)
-      setIsSaving(false)
-      return
+  //   if (Object.keys(allErrors).length > 0) {
+  //     setFormErrors(allErrors)
+  //     setIsSaving(false)
+  //     return
+  //   }
+
+  //   try {
+  //     // Update each platform's link using PUT API
+  //     const updatePromises = Object.entries(formData).map(([platform, url]) =>
+  //       axiosInstance.put(`/socialmedialinks/${platform}`, {
+  //         url: url.trim(),
+  //         platform: platform
+  //       })
+  //     )
+
+  //     await Promise.all(updatePromises)
+      
+  //     setHasChanges(false)
+  //     setShowSaveAlert(true)
+  //     setApiError(null)
+  //   } catch (error) {
+  //     console.error("Failed to save social media links:", error)
+  //     setApiError("Failed to save social media links. Please try again.")
+  //   } finally {
+  //     setIsSaving(false)
+  //   }
+  // }
+  const handleSave = async () => {
+  setIsSaving(true)
+  setApiError(null)
+  
+  // Validate all URLs first
+  const allErrors = {}
+  Object.keys(formData).forEach((key) => {
+    const error = validateUrl(key, formData[key])
+    if (error) {
+      allErrors[key] = error
     }
+  })
 
-    try {
-      // Update each platform's link using PUT API
-      const updatePromises = Object.entries(formData).map(([platform, url]) =>
-        axiosInstance.put(`/socialmedialinks/${platform}`, {
+  if (Object.keys(allErrors).length > 0) {
+    setFormErrors(allErrors)
+    setIsSaving(false)
+    return
+  }
+
+  try {
+    // Update or create each platform's link
+    const updatePromises = Object.entries(formData).map(async ([platform, url]) => {
+      try {
+        // Try to update first
+        return await axiosInstance.put(`/socialmedialinks/${platform}`, {
           url: url.trim(),
           platform: platform
         })
-      )
+      } catch (error) {
+        // If 404 (not found), create new entry
+        if (error.response?.status === 404) {
+          return await axiosInstance.post('/socialmedialinks', {
+            url: url.trim(),
+            platform: platform
+          })
+        }
+        throw error
+      }
+    })
 
-      await Promise.all(updatePromises)
-      
-      setHasChanges(false)
-      setShowSaveAlert(true)
-      setApiError(null)
-    } catch (error) {
-      console.error("Failed to save social media links:", error)
-      setApiError("Failed to save social media links. Please try again.")
-    } finally {
-      setIsSaving(false)
-    }
+    await Promise.all(updatePromises)
+    
+    setHasChanges(false)
+    setShowSaveAlert(true)
+    setApiError(null)
+  } catch (error) {
+    console.error("Failed to save social media links:", error)
+    setApiError("Failed to save social media links. Please try again.")
+  } finally {
+    setIsSaving(false)
   }
+}
 
   const handleCloseAlert = () => {
     setShowSaveAlert(false)

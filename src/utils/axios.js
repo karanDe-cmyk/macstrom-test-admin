@@ -11,7 +11,9 @@ import axios from 'axios'
 // export default axiosInstance;      
 
 const axiosInstance = axios.create({
-  baseURL: 'https://dev-macstrombattle-api.kglame.com/api',
+  // baseURL: 'https://api-v1.macstrombattle.com/api',
+  // baseURL: 'https://macstrombattle-api.kglame.com/api',
+   baseURL: 'https://dev-macstrombattle-api.kglame.com/api',
   withCredentials: true,
 });
 
