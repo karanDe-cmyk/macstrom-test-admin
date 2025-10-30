@@ -181,7 +181,7 @@ const menuItems = [
   {
     label: "Setting",
     icon: Settings,
-    path: "/settings",
+    path: "/testlogin",
     permissionKey: "Setting"
   },
   {

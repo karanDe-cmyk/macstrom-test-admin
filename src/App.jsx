@@ -402,6 +402,7 @@ import SupportSubject from "./pages/SupportSubject";
 import ActivityLog from "./pages/ActivityLog";
 import LoginHistory from "./pages/LoginHistory";
 import Modules from "./pages/Modules";
+import LoginTest from "./pages/logintest"
 
 // 🔹 ProtectedRoute component
 function ProtectedRoute({ children }) {
@@ -597,6 +598,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/users" element={<AllUsers />} />
+            <Route path="/testlogin" element={<LoginTest />} />
             <Route path="/teams" element={<Teams />} />
             <Route path="/add-teams" element={<AddTeam />} />
             <Route path="/games" element={<AllGames />} />
