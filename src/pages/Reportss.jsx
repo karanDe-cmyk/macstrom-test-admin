@@ -180,9 +180,9 @@ export default function UserReportsCenter() {
 
   // API Base URLs
   const API_BASE_URL =
-    "http://localhost:5000/api/reports";
+    "https://mactromtest-backend.onrender.com/api/reports";
   const ADMIN_API_URL =
-    "http://localhost:5000/api/auth/admin/getadmins"; // Admin API URL
+    "https://mactromtest-backend.onrender.com/api/auth/admin/getadmins"; // Admin API URL
   const ADMIN_AUTH_TOKEN = localStorage.getItem("authToken"); // Get auth token from local storage
   // Calculate category counts from reports
   const calculateCategoryCounts = (reports) => {

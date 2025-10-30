@@ -14,7 +14,7 @@ const FirebaseNotificationHandler = () => {
       }
 
       try {
-        const apiUrl = 'http://localhost:5000/api/notifications/save-fcm-token';
+        const apiUrl = 'https://mactromtest-backend.onrender.com/api/notifications/save-fcm-token';
 
         const response = await fetch(apiUrl, {
           method: 'POST',

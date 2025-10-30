@@ -12,7 +12,7 @@ const EnvConfigManager = () => {
   const [newValue, setNewValue] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
 
-  const API_BASE = 'http://localhost:5000/api';
+  const API_BASE = 'https://mactromtest-backend.onrender.com/api';
   
   const getAuthHeaders = () => {
     // Try multiple possible token key names

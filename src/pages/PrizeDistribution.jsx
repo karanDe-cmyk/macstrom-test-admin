@@ -16,7 +16,7 @@ const TournamentAdminPanel = () => {
   const [newPrize, setNewPrize] = useState({ place: '', amount: '', benefits: [''] });
   const [newBenefit, setNewBenefit] = useState({ category: '', icon: 'gift', items: [{ name: '', description: '' }] });
 
-  const API_BASE_URL = 'http://localhost:5000/api';
+  const API_BASE_URL = 'https://mactromtest-backend.onrender.com/api';
   
 
   // Helper function for API requests with Axios

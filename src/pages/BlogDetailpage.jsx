@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router-dom"
 import { FaArrowLeft, FaCalendarAlt, FaUser } from "react-icons/fa"
 import axiosInstance from "../utils/axios"
 
-// const API_BASE_URL = "http://localhost:5000/api/blogs"
+// const API_BASE_URL = "https://mactromtest-backend.onrender.com/api/blogs"
 
 export default function BlogDetailPage() {
   const { id } = useParams()

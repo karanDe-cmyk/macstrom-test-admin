@@ -4,7 +4,7 @@ import axios from 'axios';
 
 // Axios instance configuration
 const axiosInstance = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: 'https://mactromtest-backend.onrender.com/api',
   withCredentials: true,
   headers: {
     Authorization: `Bearer ${localStorage.getItem("authToken")}`,

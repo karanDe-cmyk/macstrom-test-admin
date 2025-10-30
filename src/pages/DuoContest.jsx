@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom"
 import axiosInstance from "../utils/axios"
 
 // API configuration
-// const API_BASE_URL = "http://localhost:5000/api"
+// const API_BASE_URL = "https://mactromtest-backend.onrender.com/api"
 // const AUTH_TOKEN = localStorage.getItem("authToken") || "your_default_token_here" // Replace with your actual token or logic to get it
 
 // // API helper functions

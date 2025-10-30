@@ -212,7 +212,7 @@ export default function ContactsPage() {
               color: "#991b1b",
             }}
           >
-            <strong>Error:</strong> {error}. Please check your API connection at http://localhost:5000/api
+            <strong>Error:</strong> {error}. Please check your API connection at https://mactromtest-backend.onrender.com/api
           </div>
         )}
 

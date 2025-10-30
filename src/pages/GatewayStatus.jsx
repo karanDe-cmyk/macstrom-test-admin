@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { RefreshCw, Plus, Trash2, Power, PowerOff, AlertCircle } from 'lucide-react';
 import axiosInstance from '../utils/axios';
 
-// const API_BASE_URL = 'http://localhost:5000/api/payment-gateway-status';
+// const API_BASE_URL = 'https://mactromtest-backend.onrender.com/api/payment-gateway-status';
 // ✅ Fetch all gateways
 export const fetchGatewaysApi = async () => {
   const { data } = await axiosInstance.get("/get-status");

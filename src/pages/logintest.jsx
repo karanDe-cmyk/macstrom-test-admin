@@ -47,7 +47,7 @@ export default function Auth() {
   // --- Utility Functions ---
 
   const getSalt = async () => {
-    const saltRes = await fetch(`http://localhost:5000/api/auth/salt`);
+    const saltRes = await fetch(`https://mactromtest-backend.onrender.com/api/auth/salt`);
     if (!saltRes.ok) throw new Error("Failed to fetch salt for registration.");
     const { salt } = await saltRes.json();
     return salt;
@@ -64,14 +64,14 @@ export default function Auth() {
     try {
       // 1️⃣ Get a new salt from the server for the new user
       // The server is expected to generate a random salt and return it.
-      const saltRes = await fetch(`http://localhost:5000/api/auth/salt`);
+      const saltRes = await fetch(`https://mactromtest-backend.onrender.com/api/auth/salt`);
       const { salt } = await saltRes.json();
 
       // 2️⃣ Hash password locally using the custom format
       const formattedPassword = customFormatClient(password, salt);
 
       // 3️⃣ Send to backend (as per the provided API structure)
-      const res = await fetch("http://localhost:5000/api/auth/register", {
+      const res = await fetch("https://mactromtest-backend.onrender.com/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, formattedPassword, salt }),
@@ -99,7 +99,7 @@ export default function Auth() {
     }
 
     try {
-      const saltRes = await fetch(`http://localhost:5000/api/auth/salt?username=${username}`);
+      const saltRes = await fetch(`https://mactromtest-backend.onrender.com/api/auth/salt?username=${username}`);
       if (!saltRes.ok) {
         const errorData = await saltRes.json();
         alert(`Error fetching salt: ${errorData.message || 'User not found'}`);
@@ -112,7 +112,7 @@ export default function Auth() {
       const formattedPassword = customFormatClient(password, salt);
 
       // Send login request
-      const res = await fetch("http://localhost:5000/api/auth/login", {
+      const res = await fetch("https://mactromtest-backend.onrender.com/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, formattedPassword }),

@@ -256,7 +256,7 @@ const Sidebar = () => {
           console.log("Fetching permissions for Admin ID:", userId);
           
           const response = await fetch(
-            `http://localhost:5000/api/auth/admin/getadminpermissions/${userId}`,
+            `https://mactromtest-backend.onrender.com/api/auth/admin/getadminpermissions/${userId}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
