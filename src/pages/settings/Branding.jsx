@@ -123,7 +123,7 @@ export default function Branding({ sidebarOpen = true }) {
 
       // Make POST request to upload API
       const response = await axios.post(
-        'https://mactromtest-backend.onrender.com/api/brandassets/upload',
+        'https://macstrombattle-api.kglame.com/api/brandassets/upload',
         formData,
         {
           headers: {

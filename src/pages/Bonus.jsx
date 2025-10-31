@@ -40,7 +40,7 @@ import { toast, ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import axiosInstance from '../utils/axios'
 
-// const API_BASE_URL = 'https://mactromtest-backend.onrender.com/api/bonus'
+// const API_BASE_URL = 'https://macstrombattle-api.kglame.com/api/bonus'
 
 export default function AdminBonusPanel() {
   const [bonuses, setBonuses] = useState([])

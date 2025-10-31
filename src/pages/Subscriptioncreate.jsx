@@ -43,7 +43,7 @@ import {
 } from "@mui/icons-material"
 import { toast } from "react-toastify"
 
-const API_URL = "https://mactromtest-backend.onrender.com/api/subscription"
+const API_URL = "https://macstrombattle-api.kglame.com/api/subscription"
 
 export default function SubscriptionAdminPanel() {
   const [plans, setPlans] = useState([])

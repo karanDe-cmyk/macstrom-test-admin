@@ -180,9 +180,9 @@ export default function UserReportsCenter() {
 
   // API Base URLs
   const API_BASE_URL =
-    "https://mactromtest-backend.onrender.com/api/reports";
+    "https://macstrombattle-api.kglame.com/api/reports";
   const ADMIN_API_URL =
-    "https://mactromtest-backend.onrender.com/api/auth/admin/getadmins"; // Admin API URL
+    "https://macstrombattle-api.kglame.com/api/auth/admin/getadmins"; // Admin API URL
   const ADMIN_AUTH_TOKEN = localStorage.getItem("authToken"); // Get auth token from local storage
   // Calculate category counts from reports
   const calculateCategoryCounts = (reports) => {

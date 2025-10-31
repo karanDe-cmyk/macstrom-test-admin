@@ -22,7 +22,7 @@ const AdsAdmin = () => {
     thumbnailUrl: ''
   });
 
-  const API_BASE = 'https://mactromtest-backend.onrender.com/api/admin/ads';
+  const API_BASE = 'https://macstrombattle-api.kglame.com/api/admin/ads';
 const getHeaders = (isFormData = false) => {
   const token = localStorage.getItem("authToken");
   const headers = {};

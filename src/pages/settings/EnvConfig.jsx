@@ -12,7 +12,7 @@ const EnvConfigManager = () => {
   const [newValue, setNewValue] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
 
-  const API_BASE = 'https://mactromtest-backend.onrender.com/api';
+  const API_BASE = 'https://macstrombattle-api.kglame.com/api';
   
   const getAuthHeaders = () => {
     // Try multiple possible token key names

@@ -1,8 +1,8 @@
 import axios from 'axios'
 
 // const axiosInstance = axios.create({
-//     // baseURL: 'https://mactromtest-backend.onrender.com/api',
-//     baseURL:'https://mactromtest-backend.onrender.com/api',
+//     // baseURL: 'https://macstrombattle-api.kglame.com/api',
+//     baseURL:'https://macstrombattle-api.kglame.com/api',
 //     withCredentials: true,
 //     headers: {
 //         Authorization: `Bearer ${localStorage.getItem("authToken")}`,
@@ -12,8 +12,8 @@ import axios from 'axios'
 
 const axiosInstance = axios.create({
   // baseURL: 'https://api-v1.macstrombattle.com/api',
-  // baseURL: 'https://mactromtest-backend.onrender.com/api',
-  baseURL: 'https://mactromtest-backend.onrender.com/api',
+  // baseURL: 'https://macstrombattle-api.kglame.com/api',
+  baseURL: 'https://macstrombattle-api.kglame.com/api',
   withCredentials: true,
 });
 

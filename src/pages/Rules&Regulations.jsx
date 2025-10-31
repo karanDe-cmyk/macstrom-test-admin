@@ -23,7 +23,7 @@ const RulesAdminPanel = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const API_BASE = 'https://mactromtest-backend.onrender.com/api';
+  const API_BASE = 'https://macstrombattle-api.kglame.com/api';
 
   const types = [
     { value: 'eligibility', label: 'Eligibility' },
