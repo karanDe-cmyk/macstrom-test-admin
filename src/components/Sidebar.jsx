@@ -181,7 +181,7 @@ const menuItems = [
   {
     label: "Setting",
     icon: Settings,
-    path: "/testlogin",
+    path: "/settings",
     permissionKey: "Setting"
   },
   {
@@ -206,6 +206,12 @@ const menuItems = [
     icon: Users,
     path: "/referral-system",
     permissionKey: "Referral System"
+  },
+  {
+    label: "Test Setting",
+    icon: Users,
+    path: "/testlogin",
+    permissionKey: "Test Setting"
   },
 ];
 
@@ -256,7 +262,7 @@ const Sidebar = () => {
           console.log("Fetching permissions for Admin ID:", userId);
           
           const response = await fetch(
-            `https://mactromtest-backend.onrender.com/api/auth/admin/getadminpermissions/${userId}`,
+            `http://localhost:5000/api/auth/admin/getadminpermissions/${userId}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
